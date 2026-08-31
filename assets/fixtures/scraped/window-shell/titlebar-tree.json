@@ -1,0 +1,82 @@
+[
+  {
+    "tag": "div",
+    "cls": "df-titlebar draggable h-11 shrink-0 flex items-center px-2",
+    "rect": [
+      0,
+      0,
+      287,
+      44
+    ],
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "h": "44px",
+    "w": "287px",
+    "fw": "400"
+  },
+  {
+    "tag": "div",
+    "cls": "draggable-none ml-2 flex min-w-0 flex-col items-start",
+    "rect": [
+      16,
+      0,
+      121,
+      44
+    ],
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "h": "44px",
+    "w": "120.5px",
+    "fw": "400"
+  },
+  {
+    "tag": "div",
+    "cls": "df-titlebar-brand -ml-1 flex min-w-0 items-center gap-1.5 pl-1 [overflow:clip]",
+    "rect": [
+      12,
+      0,
+      125,
+      44
+    ],
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "h": "44px",
+    "w": "124.5px",
+    "fw": "400"
+  },
+  {
+    "tag": "div",
+    "cls": "draggable-none ml-auto flex items-center",
+    "rect": [
+      209,
+      0,
+      70,
+      44
+    ],
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "h": "44px",
+    "w": "70px",
+    "fw": "400"
+  },
+  {
+    "tag": "div",
+    "cls": "df-app-switch flex",
+    "rect": [
+      209,
+      8,
+      70,
+      28
+    ],
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "h": "28px",
+    "w": "70px",
+    "fw": "400"
+  }
+]

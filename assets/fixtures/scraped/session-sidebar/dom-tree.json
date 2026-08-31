@@ -1,0 +1,922 @@
+[
+  {
+    "tag": "aside",
+    "cls": "dframe-sidebar",
+    "rect": [
+      0,
+      0,
+      288,
+      750
+    ],
+    "text": "Claude CodeNewCtrl⇧OArtifactsDispatchBetaCustomizeMor",
+    "color": "rgb(11, 11, 11)",
+    "bg": "color(srgb 0.982353 0.982353 0.976471)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "750px",
+    "w": "288px"
+  },
+  {
+    "tag": "div",
+    "cls": "df-titlebar draggable h-11 shrink-0 flex items-center px-2",
+    "rect": [
+      0,
+      0,
+      287,
+      44
+    ],
+    "text": "Claude Code",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 8px",
+    "radius": "0px",
+    "h": "44px",
+    "w": "287px"
+  },
+  {
+    "tag": "div",
+    "cls": "draggable-none ml-2 flex min-w-0 flex-col items-start",
+    "rect": [
+      16,
+      0,
+      121,
+      44
+    ],
+    "text": "Claude Code",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "44px",
+    "w": "120.5px"
+  },
+  {
+    "tag": "div",
+    "cls": "df-titlebar-brand -ml-1 flex min-w-0 items-center gap-1.5 pl-1 [overflow:clip]",
+    "rect": [
+      12,
+      0,
+      125,
+      44
+    ],
+    "text": "Claude Code",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 0px 0px 4px",
+    "radius": "0px",
+    "h": "44px",
+    "w": "124.5px"
+  },
+  {
+    "tag": "a",
+    "cls": "flex items-center",
+    "rect": [
+      16,
+      12,
+      121,
+      20
+    ],
+    "text": "Claude Code",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "120.5px"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-flex flex-col items-start",
+    "rect": [
+      16,
+      12,
+      121,
+      20
+    ],
+    "text": "Claude Code",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "120.5px"
+  },
+  {
+    "tag": "span",
+    "cls": "whitespace-nowrap font-voice leading-none text-primary",
+    "rect": [
+      14,
+      12,
+      123,
+      20
+    ],
+    "text": "Claude Code",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "20px",
+    "fw": "500",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "122.5px"
+  },
+  {
+    "tag": "div",
+    "cls": "draggable-none ml-auto flex items-center",
+    "rect": [
+      209,
+      0,
+      70,
+      44
+    ],
+    "text": "",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "44px",
+    "w": "70px"
+  },
+  {
+    "tag": "div",
+    "cls": "df-app-switch flex",
+    "rect": [
+      209,
+      8,
+      70,
+      28
+    ],
+    "text": "",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "28px",
+    "w": "70px"
+  },
+  {
+    "tag": "div",
+    "cls": "relative inline-flex w-fit shrink-0 items-stretch h-control font-sans rounded bg-[var(--cds-segmented-control-track)] p-px",
+    "rect": [
+      209,
+      8,
+      70,
+      28
+    ],
+    "text": "",
+    "color": "rgb(11, 11, 11)",
+    "bg": "color(srgb 0.0431373 0.0431373 0.0431373 / 0.05)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "1px",
+    "radius": "7px",
+    "h": "28px",
+    "w": "70px"
+  },
+  {
+    "tag": "div",
+    "cls": "pointer-events-none absolute inset-0 overflow-clip rounded",
+    "rect": [
+      209,
+      8,
+      70,
+      28
+    ],
+    "text": "",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "7px",
+    "h": "28px",
+    "w": "70px"
+  },
+  {
+    "tag": "div",
+    "cls": "dframe-sidebar-body flex flex-col flex-1 min-h-0 gap-2 px-2 pt-3 pb-1.5 [overflow:clip]",
+    "rect": [
+      0,
+      44,
+      287,
+      706
+    ],
+    "text": "NewCtrl⇧OArtifactsDispatchBetaCustomizeMoreProjects",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "4px 8px 8px",
+    "radius": "0px",
+    "h": "706px",
+    "w": "287px"
+  },
+  {
+    "tag": "div",
+    "cls": "static-composer-boot-fade flex flex-col flex-1 min-h-0",
+    "rect": [
+      8,
+      48,
+      271,
+      600
+    ],
+    "text": "NewCtrl⇧OArtifactsDispatchBetaCustomizeMoreProjects",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "600px",
+    "w": "271px"
+  },
+  {
+    "tag": "div",
+    "cls": "shrink-0 pr-[max(0px,calc(var(--df-nav-scrollbar-lane,0px)-8px))]",
+    "rect": [
+      8,
+      48,
+      271,
+      179
+    ],
+    "text": "NewCtrl⇧OArtifactsDispatchBetaCustomizeMore",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px 0px 0px",
+    "radius": "0px",
+    "h": "178.5px",
+    "w": "271px"
+  },
+  {
+    "tag": "a",
+    "cls": "w-full shrink-0 border-none text-left text-[length:var(--df-row-font)] text-secondary flex items-center gap-[var(--df-row-gap)] h-[var(--df-row-h)] px-[var(--df-row-px)] [&_.df-leading-slot]:text-seco",
+    "rect": [
+      8,
+      52,
+      269,
+      32
+    ],
+    "text": "NewCtrl⇧O",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px",
+    "radius": "8px",
+    "h": "32px",
+    "w": "269px"
+  },
+  {
+    "tag": "span",
+    "cls": "inline-flex shrink-0 items-baseline gap-[0.3em] text-caption [--cds-shortcut-cap-ink:currentColor] translate-y-px pl-1 text-muted opacity-0 group-hover:opacity-100",
+    "rect": [
+      84,
+      61,
+      50,
+      17
+    ],
+    "text": "Ctrl⇧O",
+    "color": "rgb(137, 135, 129)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "12px",
+    "fw": "400",
+    "lh": "17px",
+    "pad": "0px 0px 0px 4px",
+    "radius": "0px",
+    "h": "17px",
+    "w": "49.7969px"
+  },
+  {
+    "tag": "a",
+    "cls": "w-full shrink-0 border-none text-left text-[length:var(--df-row-font)] text-secondary flex items-center gap-[var(--df-row-gap)] h-[var(--df-row-h)] px-[var(--df-row-px)] [&_.df-leading-slot]:text-seco",
+    "rect": [
+      8,
+      85,
+      269,
+      32
+    ],
+    "text": "Artifacts",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px",
+    "radius": "8px",
+    "h": "32px",
+    "w": "269px"
+  },
+  {
+    "tag": "span",
+    "cls": "flex min-w-0 flex-1 items-center",
+    "rect": [
+      46,
+      90,
+      229,
+      21
+    ],
+    "text": "Artifacts",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "229px"
+  },
+  {
+    "tag": "span",
+    "cls": "min-w-0 truncate",
+    "rect": [
+      46,
+      90,
+      59,
+      21
+    ],
+    "text": "Artifacts",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "58.6875px"
+  },
+  {
+    "tag": "a",
+    "cls": "w-full shrink-0 border-none text-left text-[length:var(--df-row-font)] text-secondary flex items-center gap-[var(--df-row-gap)] h-[var(--df-row-h)] px-[var(--df-row-px)] [&_.df-leading-slot]:text-seco",
+    "rect": [
+      8,
+      117,
+      269,
+      32
+    ],
+    "text": "DispatchBeta",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px",
+    "radius": "8px",
+    "h": "32px",
+    "w": "269px"
+  },
+  {
+    "tag": "span",
+    "cls": "flex min-w-0 flex-1 items-center",
+    "rect": [
+      46,
+      123,
+      229,
+      21
+    ],
+    "text": "DispatchBeta",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "229px"
+  },
+  {
+    "tag": "span",
+    "cls": "min-w-0 truncate",
+    "rect": [
+      46,
+      123,
+      59,
+      21
+    ],
+    "text": "Dispatch",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "58.9688px"
+  },
+  {
+    "tag": "a",
+    "cls": "w-full shrink-0 border-none text-left text-[length:var(--df-row-font)] text-secondary flex items-center gap-[var(--df-row-gap)] h-[var(--df-row-h)] px-[var(--df-row-px)] [&_.df-leading-slot]:text-seco",
+    "rect": [
+      8,
+      150,
+      269,
+      32
+    ],
+    "text": "Customize",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px",
+    "radius": "8px",
+    "h": "32px",
+    "w": "269px"
+  },
+  {
+    "tag": "span",
+    "cls": "flex min-w-0 flex-1 items-center",
+    "rect": [
+      46,
+      155,
+      229,
+      21
+    ],
+    "text": "Customize",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "229px"
+  },
+  {
+    "tag": "span",
+    "cls": "min-w-0 truncate",
+    "rect": [
+      46,
+      155,
+      70,
+      21
+    ],
+    "text": "Customize",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "70.2344px"
+  },
+  {
+    "tag": "button",
+    "cls": "w-full shrink-0 border-none text-left text-[length:var(--df-row-font)] text-secondary flex items-center gap-[var(--df-row-gap)] h-[var(--df-row-h)] px-[var(--df-row-px)] [&_.df-leading-slot]:text-seco",
+    "rect": [
+      8,
+      182,
+      269,
+      32
+    ],
+    "text": "More",
+    "color": "rgb(82, 81, 78)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px",
+    "radius": "8px",
+    "h": "32px",
+    "w": "269px"
+  },
+  {
+    "tag": "div",
+    "cls": "dframe-nav-scroll relative flex flex-col flex-1 min-h-0 overflow-y-auto pl-1 pt-1 pb-2 -ml-1 -mt-1 -mr-2 pr-[max(0px,calc(8px-var(--df-nav-scrollbar-lane,0px)))] [scrollbar-gutter:stable]",
+    "rect": [
+      4,
+      223,
+      283,
+      426
+    ],
+    "text": "ProjectsPin projects to keep them herePinnedDrag to pi",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "4px 0px 8px 4px",
+    "radius": "0px",
+    "h": "425.5px",
+    "w": "283px"
+  },
+  {
+    "tag": "div",
+    "cls": "",
+    "rect": [
+      8,
+      227,
+      269,
+      44
+    ],
+    "text": "Pinned",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "44px",
+    "w": "269px"
+  },
+  {
+    "tag": "div",
+    "cls": "flex h-[var(--df-row-h)] items-center gap-[var(--df-row-gap)] rounded-[var(--df-radius-pill)] px-[var(--df-row-px)] text-[length:var(--df-row-font)] transition-colors text-muted opacity-80",
+    "rect": [
+      8,
+      272,
+      269,
+      28
+    ],
+    "text": "Drag to pin",
+    "color": "rgb(137, 135, 129)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 2px",
+    "radius": "8px",
+    "h": "28px",
+    "w": "269px"
+  },
+  {
+    "tag": "div",
+    "cls": "df-recents-anchor grow shrink-0 min-h-[120px]",
+    "rect": [
+      8,
+      227,
+      269,
+      414
+    ],
+    "text": "RecentsGiấy đề nghị phụ cấpCông văn FedEx AWB 87103418035",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "413.5px",
+    "w": "269px"
+  },
+  {
+    "tag": "div",
+    "cls": "group/section flex flex-col gap-px",
+    "rect": [
+      8,
+      227,
+      269,
+      44
+    ],
+    "text": "RecentsGiấy đề nghị phụ cấpCông văn FedEx AWB 87103418035",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "44px",
+    "w": "269px"
+  },
+  {
+    "tag": "div",
+    "cls": "static-composer-boot-fade df-banner-slot -mt-2 flex shrink-0 flex-col gap-2 empty:hidden",
+    "rect": [
+      8,
+      648,
+      271,
+      40
+    ],
+    "text": "Try Claude TagSet up",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "40px",
+    "w": "271px"
+  },
+  {
+    "tag": "div",
+    "cls": "epitaxy-root shrink-0",
+    "rect": [
+      8,
+      648,
+      271,
+      40
+    ],
+    "text": "Try Claude TagSet up",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "40px",
+    "w": "271px"
+  },
+  {
+    "tag": "div",
+    "cls": "flex flex-col gap-1.25",
+    "rect": [
+      8,
+      648,
+      271,
+      40
+    ],
+    "text": "Try Claude TagSet up",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "40px",
+    "w": "271px"
+  },
+  {
+    "tag": "div",
+    "cls": "epitaxy-composer-aux-view epitaxy-composer-band text-body",
+    "rect": [
+      8,
+      648,
+      271,
+      40
+    ],
+    "text": "Try Claude TagSet up",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(11, 11, 11, 0.04)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "10px 8px",
+    "radius": "10px",
+    "h": "40px",
+    "w": "271px"
+  },
+  {
+    "tag": "div",
+    "cls": "flex min-w-0 flex-1 flex-wrap items-start gap-x-sm gap-y-sm",
+    "rect": [
+      41,
+      658,
+      196,
+      20
+    ],
+    "text": "Try Claude TagSet up",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "196px"
+  },
+  {
+    "tag": "div",
+    "cls": "min-w-0 max-w-full flex-auto",
+    "rect": [
+      41,
+      658,
+      130,
+      20
+    ],
+    "text": "Try Claude Tag",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "130.188px"
+  },
+  {
+    "tag": "span",
+    "cls": "line-clamp-3 break-words text-primary",
+    "rect": [
+      41,
+      658,
+      130,
+      20
+    ],
+    "text": "Try Claude Tag",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "130.188px"
+  },
+  {
+    "tag": "div",
+    "cls": "flex min-w-0 max-w-full shrink-0 flex-wrap items-start gap-x-sm gap-y-sm",
+    "rect": [
+      183,
+      658,
+      54,
+      20
+    ],
+    "text": "Set up",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "20px",
+    "w": "53.8125px"
+  },
+  {
+    "tag": "span",
+    "cls": "cds-reset cds-text-link cds-text-link-underline inline cursor-pointer shrink-0 text-body py-[calc((var(--cds-h-control)-var(--epitaxy-textlink-leading,var(--cds-leading-body)))/2)] -my-[calc((var(--cd",
+    "rect": [
+      183,
+      652,
+      42,
+      32
+    ],
+    "text": "Set up",
+    "color": "rgb(24, 79, 149)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "20px",
+    "pad": "6px 0px",
+    "radius": "2px",
+    "h": "32px",
+    "w": "41.8125px"
+  },
+  {
+    "tag": "div",
+    "cls": "static-composer-boot-fade df-bottom-tray shrink-0",
+    "rect": [
+      0,
+      696,
+      287,
+      52
+    ],
+    "text": "JEm·Max",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "52px",
+    "w": "287px"
+  },
+  {
+    "tag": "div",
+    "cls": "df-footer-row shrink-0 flex items-center gap-[var(--df-footer-gap)]",
+    "rect": [
+      0,
+      696,
+      287,
+      52
+    ],
+    "text": "JEm·Max",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "10px 8px",
+    "radius": "0px",
+    "h": "52px",
+    "w": "287px"
+  },
+  {
+    "tag": "div",
+    "cls": "min-w-0 flex-1",
+    "rect": [
+      8,
+      706,
+      169,
+      32
+    ],
+    "text": "JEm·Max",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "32px",
+    "w": "169px"
+  },
+  {
+    "tag": "button",
+    "cls": "df-user-menu-btn cds-reset flex h-[max(28px,var(--df-footer-btn-size))] max-w-full items-center gap-[var(--df-row-gap)] rounded-[var(--df-radius-pill)] pl-[var(--df-row-px)] pr-2 text-left outline-non",
+    "rect": [
+      8,
+      706,
+      135,
+      32
+    ],
+    "text": "JEm·Max",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 8px 0px 2px",
+    "radius": "8px",
+    "h": "32px",
+    "w": "134.688px"
+  },
+  {
+    "tag": "span",
+    "cls": "flex min-w-0 gap-1 overflow-hidden text-[length:var(--df-row-font)] df-footer-suffix items-baseline",
+    "rect": [
+      46,
+      712,
+      69,
+      21
+    ],
+    "text": "Em·Max",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px 12px 0px 0px",
+    "radius": "0px",
+    "h": "21px",
+    "w": "68.6875px"
+  },
+  {
+    "tag": "div",
+    "cls": "df-footer-aux ml-auto flex shrink-0 items-center",
+    "rect": [
+      183,
+      706,
+      96,
+      32
+    ],
+    "text": "",
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "fs": "14px",
+    "fw": "400",
+    "lh": "21px",
+    "pad": "0px",
+    "radius": "0px",
+    "h": "32px",
+    "w": "96px"
+  }
+]
