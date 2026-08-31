@@ -1,11 +1,15 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
-import started from 'electron-squirrel-startup';
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (started) {
-  app.quit();
-}
+// Reserved seam: app/src/main/omp-rpc/ — TS decoder module lands with the
+// streaming ticket (parity vs assets/fixtures/streaming-capture.ndjson).
+
+// Scaffold literals mirror assets/theme/light.toml:
+// app.surfaces.titlebar, app.text.primary, app.layout.titlebar_height.
+// Theme compilation replaces these once the theme ticket lands.
+const WCO_HEIGHT = 44;
+const WCO_BG = '#fcfcfb';
+const WCO_FG = '#0b0b0b';
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -13,13 +17,12 @@ const createWindow = () => {
     height: 800,
     // Window Controls Overlay: native caption buttons over web content.
     // Never draw a custom maximize button — Snap Layouts only attach to the
-    // native WCO button. Colours from assets/theme/light.toml (titlebar /
-    // foreground tokens).
+    // native WCO button.
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#fcfcfb',
-      symbolColor: '#0b0b0b',
-      height: 44,
+      color: WCO_BG,
+      symbolColor: WCO_FG,
+      height: WCO_HEIGHT,
     },
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

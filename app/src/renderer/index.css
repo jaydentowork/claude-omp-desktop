@@ -1,5 +1,6 @@
-/* Scaffold shell only — real tokens compile from assets/theme/light.toml
-   in the theme ticket. Values here match its titlebar/background tokens. */
+/* Scaffold literals mirror assets/theme/light.toml:
+   semantic.colors.{background,foreground,border} and app.layout.titlebar_height.
+   Theme compilation replaces them once the theme ticket lands. */
 html,
 body,
 #root {
@@ -13,9 +14,10 @@ body {
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* WCO drag region: full-width strip under the native caption buttons. */
+/* WCO drag region: full-width strip under the native caption buttons.
+   Height mirrors main.ts titleBarOverlay.height until tokens land. */
 .titlebar {
-  height: env(titlebar-area-height, 44px);
+  height: 44px;
   app-region: drag;
   border-bottom: 1px solid #e8e8e8;
 }
