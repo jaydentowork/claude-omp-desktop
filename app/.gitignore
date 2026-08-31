@@ -21,3 +21,7 @@ out/
 # Vite/TS cache
 *.tsbuildinfo
 .vite-cache/
+
+# Playwright e2e output (traces, reports)
+e2e/.output/
+playwright-report/

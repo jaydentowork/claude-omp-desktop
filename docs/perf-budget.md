@@ -6,7 +6,8 @@ performance claim as a Vitest test that fails loud in CI:
 > 60 fps transcript at tens of thousands of rows with **flat per-flush cost**.
 
 The test lives at `app/src/main/streaming-cost.test.ts` and runs in the
-default `npm test` (`vitest run`) loop.
+default `npm test` (`vitest run`) loop. The interactive on-screen half of
+the claim (issue #19) is the Playwright check below.
 
 ## The bars
 
@@ -70,3 +71,43 @@ available, both of which are guaranteed in Node 17+.
 - Real DOM rendering of the rows array — the test asserts the cost shape
   the renderer must hit; the React side is verified by the renderer tests.
 - Latency from main → renderer across processes (only one process in CI).
+
+All three gaps are what the Playwright interactive check covers.
+
+## The Playwright interactive bar (issue #19)
+
+`app/e2e/perf/60fps.spec.ts`, run via `npm run e2e`. Boots the real app
+(`electron-forge start` with a CDP port; the spec attaches over
+`connectOverCDP`) with the synthetic 60 fps source armed
+(`OMP_PERF_REPLAY=30000,45000`, `app/src/main/perf-replay.ts`): **seed**
+30 000 settled rows through the live decoder→Transport→MessageChannelMain→
+preload→store→virtualized-pane pipeline, then **stream** `message_update`
+snapshots at 60 events/s for 45 s against that backlog.
+
+| Bar            | Threshold                                   | Catches                                      |
+|----------------|---------------------------------------------|----------------------------------------------|
+| virtualization | mounted `.row-wrap` nodes < 200 at 30k rows | dropping virtualisation (full-list render)   |
+| fps floor      | ≥ 55 fps over a 10 s window in-stream       | anything that stalls the frame clock         |
+| dropped frames | rAF gaps > 25 ms total < 5% of 60 Hz budget | jank bursts a mean fps number would average out |
+
+fps is measured as `requestAnimationFrame` callbacks per second inside the
+page — the compositor's own frame clock, so React render cost, layout and
+paint are all inside the measurement. The run always writes a Chrome trace
+to `app/e2e/.output/60fps.trace.json` (load in Perfetto or the DevTools
+Performance tab) so a regression has a profile to diff, not just a number.
+The verdict line (`[60fps] N fps, D dropped, M mounted rows`) prints on
+every run, pass or fail.
+
+Background-throttling Chromium switches
+(`--disable-background-timer-throttling` etc., see
+`app/playwright.config.ts`) keep the occluded/headless CI window at full
+rAF cadence — without them a hidden window idles at ~1 fps and fails
+spuriously.
+
+Verified regression sensitivity: replacing `getVirtualItems()` with a
+render-every-row map fails the run loudly (the seed phase itself times out
+under the O(rows) render, before the fps bar is even reached).
+
+Baseline on the dev box below: ~164 fps (165 Hz display — rAF follows the
+refresh rate, hence a floor well under the healthy value), 0 dropped
+frames, 50 mounted rows, whole spec ~24 s.
