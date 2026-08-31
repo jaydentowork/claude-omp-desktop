@@ -1,0 +1,23 @@
+# Logs
+*.log
+
+# Coverage
+coverage
+
+# Dependencies
+node_modules/
+
+# Build output (Electron Forge + Vite)
+.vite/
+out/
+
+# Env files
+.env
+.env.*
+
+# OS junk
+.DS_Store
+
+# Vite/TS cache
+*.tsbuildinfo
+.vite-cache/
