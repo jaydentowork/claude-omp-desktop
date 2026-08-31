@@ -1,6 +1,24 @@
-/* Scaffold literals mirror assets/theme/light.toml:
-   semantic.colors.{background,foreground,border} and app.layout.titlebar_height.
-   Theme compilation replaces them once the theme ticket lands. */
+/* Theme tokens as CSS custom properties, mirroring assets/theme/light.toml
+   ([semantic] / [app] sections). The tokens-to-css build step + dev watcher
+   are a later ticket; until then this block is the mechanical output kept in
+   sync by hand. Fonts + translucent borders corrected by the live scrape
+   (assets/fixtures/scraped/transcript/computed-styles.json). */
+:root {
+  --color-background: #fcfcfb;      /* [semantic.colors] background */
+  --color-surface: #f2f2f1;         /* [semantic.colors] surface */
+  --text-primary: #0b0b0b;          /* [app.text] primary */
+  --text-secondary: #52514e;        /* [app.text] secondary */
+  --text-muted: #898781;            /* [app.text] muted */
+  --text-link: #184f95;             /* [app.text] link */
+  --border: #e8e8e8;                /* [semantic.colors] border */
+  --border-subtle: rgba(11, 11, 11, 0.1); /* scrape: translucent card/inline-code border */
+  --inline-code-bg: rgba(11, 11, 11, 0.05); /* scrape: inline-code bg */
+  --card-bg: #f2f2f1;               /* [app.surfaces] card */
+  --sans: anthropic-sans, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: anthropic-mono, ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --titlebar-height: 44px;          /* [app.layout] titlebar_height */
+}
+
 html,
 body,
 #root {
@@ -9,15 +27,213 @@ body,
 }
 
 body {
-  background: #fcfcfb;
-  color: #0b0b0b;
-  font-family: 'Segoe UI', sans-serif;
+  background: var(--color-background);
+  color: var(--text-primary);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 22px;
 }
 
-/* WCO drag region: full-width strip under the native caption buttons.
-   Height mirrors main.ts titleBarOverlay.height until tokens land. */
+/* WCO drag region: full-width strip under the native caption buttons. */
 .titlebar {
-  height: 44px;
+  height: var(--titlebar-height);
   app-region: drag;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- transcript pane (docs/transcript-rendering.md §1, §4.3) ------------- */
+
+.transcript-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-header {
+  height: 44px;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-weight: 500;
+}
+
+/* Composer + git-strip slot: 88 px reserved below the list (spec §1).
+   The composer itself ships with its own slice. */
+.pane-footer {
+  height: 88px;
+  flex: none;
+}
+
+.transcript-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* 36 px left/right inset on the message list (spec §1). */
+  padding: 0 36px;
+}
+
+.transcript-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.transcript-scroll::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
+  border-radius: 3px;
+}
+.transcript-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.transcript-vlist {
+  position: relative;
+  width: 100%;
+}
+
+.empty {
+  color: var(--text-muted);
+  padding: 16px 0;
+}
+
+/* --- rows (spec §2) ------------------------------------------------------ */
+
+.row {
+  padding: 4px 0;
+}
+
+/* §2.1 user message: right-aligned tinted bubble. */
+.row-user {
+  display: flex;
+  justify-content: flex-end;
+}
+.user-bubble {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 8px 12px;
+  max-width: 70%;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* §2.2 assistant prose: full width, no background. */
+.row-assistant {
+  overflow-wrap: break-word;
+}
+.row-assistant .md-p {
+  margin: 0 0 22px;
+}
+.row-assistant .md-p:last-child {
+  margin-bottom: 0;
+}
+
+/* §2.4 inline code (values from the scrape). */
+.row-assistant code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--inline-code-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  padding: 1px 4px;
+}
+.row-assistant pre {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 20px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+}
+.row-assistant pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.row-assistant a {
+  color: var(--text-link);
+}
+.row-assistant blockquote {
+  border-left: 3px solid var(--text-secondary);
+  margin: 0;
+  padding-left: 12px;
+  color: var(--text-secondary);
+}
+.row-assistant table {
+  border-collapse: collapse;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+.row-assistant th {
+  background: var(--inline-code-bg);
+}
+.row-assistant th,
+.row-assistant td {
+  border: 1px solid var(--border-subtle);
+  padding: 4px 8px;
+}
+
+/* §2.5 collapsed tool-call row. */
+.tool-pill {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--card-bg);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tool-name {
+  font-weight: 500;
+}
+.tool-summary {
+  color: var(--text-secondary);
+}
+.tool-chevron {
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.tool-result {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 20px;
+  background: var(--card-bg);
+  border-radius: 0 0 4px 4px;
+  margin: 0;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* §2.6 run-summary line. */
+.row-run-summary {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  padding-top: 8px;
+}
+
+/* dev-only stream-gap banner */
+.resync-banner {
+  position: fixed;
+  top: 52px;
+  right: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
 }

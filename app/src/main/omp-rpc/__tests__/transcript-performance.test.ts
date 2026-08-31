@@ -13,6 +13,7 @@ function modelWithBacklog(rows: number): TranscriptModel {
     role: i % 2 === 0 ? 'user' : 'assistant',
     text: 'settled text',
     streaming: false,
+    rev: 0,
   }));
   model.apply({ event: 'message_start', id: 'live', role: 'assistant' });
   return model;

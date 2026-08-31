@@ -15,7 +15,7 @@ export {
 } from './frame';
 export type { Frame, Ready, Response, DecodeErrorKind } from './frame';
 
-export { TranscriptModel, Coalescer, decodeEvent, toolSummary } from './transcript';
+export { TranscriptModel, Coalescer, decodeEvent, decodeEventValue, toolSummary } from './transcript';
 export type { ChatMessage, TranscriptEvent, Role } from './transcript';
 
 export { decodeEntry, SessionEntryIndex } from './session';

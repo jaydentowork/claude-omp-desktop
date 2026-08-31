@@ -26,6 +26,11 @@ function parseRole(s: string): Role {
  * the assistant message, because they collapse independently
  * (`docs/transcript-rendering.md` §3) and the virtual list needs one height
  * per row.
+ *
+ * `rev` counts in-place mutations of the row. The model mutates rows rather
+ * than replacing them (hot-path requirement), so React rows memo on
+ * `(message, rev)` — the spec's "(message.id, message.revision)" key — to
+ * see changes reference equality cannot.
  */
 export type ChatMessage =
   | {
@@ -36,6 +41,7 @@ export type ChatMessage =
       text: string;
       /** True between `message_start` and `message_end`. */
       streaming: boolean;
+      rev: number;
     }
   | {
       row: 'tool';
@@ -48,6 +54,7 @@ export type ChatMessage =
       /** Populated by `tool_execution_end`; `null` while in flight. */
       result: string | null;
       expanded: boolean;
+      rev: number;
     }
   | {
       /**
@@ -57,6 +64,7 @@ export type ChatMessage =
       row: 'run_summary';
       id: string;
       text: string;
+      rev: number;
     };
 
 /** The subset of the RPC event stream the transcript reacts to. */
@@ -101,6 +109,7 @@ export class TranscriptModel {
       if (row !== undefined && row.row === 'text' && row.id === id) {
         row.text = text;
         row.streaming = streaming;
+        row.rev += 1;
         this.revision += 1;
         return;
       }
@@ -111,10 +120,11 @@ export class TranscriptModel {
       const wasStreaming = row.streaming;
       row.text = text;
       row.streaming = streaming;
+      row.rev += 1;
       if (!wasStreaming && streaming) this.streamingIdx = existing;
       else if (wasStreaming && !streaming && this.streamingIdx === existing) this.streamingIdx = null;
     } else {
-      this.messages.push({ row: 'text', id, role, text, streaming });
+      this.messages.push({ row: 'text', id, role, text, streaming, rev: 0 });
       if (streaming) this.streamingIdx = this.messages.length - 1;
     }
     this.revision += 1;
@@ -151,10 +161,12 @@ export class TranscriptModel {
     if (noun.length === 0 || rest.trim().length === 0) return;
 
     row.text = rest.replace(/^\s+/, '');
+    row.rev += 1;
     this.messages.splice(ix, 0, {
       row: 'run_summary',
       id: `summary:${row.id}`,
       text: `${verb} ${count} ${noun} ›`,
+      rev: 0,
     });
   }
 
@@ -163,6 +175,7 @@ export class TranscriptModel {
     for (const m of this.messages) {
       if (m.row === 'tool' && m.toolCallId === toolCallId) {
         m.expanded = !m.expanded;
+        m.rev += 1;
         this.revision += 1;
         return;
       }
@@ -198,7 +211,10 @@ export class TranscriptModel {
         if (event.isTerminal) {
           this.streaming = false;
           for (const m of this.messages) {
-            if (m.row === 'text') m.streaming = false;
+            if (m.row === 'text' && m.streaming) {
+              m.streaming = false;
+              m.rev += 1;
+            }
           }
           this.streamingIdx = null;
           this.promoteRunSummary();
@@ -223,6 +239,7 @@ export class TranscriptModel {
           summary: event.summary,
           result: null,
           expanded: false,
+          rev: 0,
         });
         this.revision += 1;
         break;
@@ -230,6 +247,7 @@ export class TranscriptModel {
         for (const m of this.messages) {
           if (m.row === 'tool' && m.toolCallId === event.toolCallId) {
             m.result = event.result;
+            m.rev += 1;
             this.revision += 1;
             break;
           }
@@ -391,6 +409,12 @@ export function decodeEvent(line: string): TranscriptEvent {
   } catch {
     return { event: 'other' };
   }
+  return decodeEventValue(v);
+}
+
+/** Same as `decodeEvent`, for an already-parsed frame value (the renderer
+ * receives structured-cloned frames, never raw NDJSON lines). */
+export function decodeEventValue(v: unknown): TranscriptEvent {
   if (typeof v !== 'object' || v === null) return { event: 'other' };
   const frame = v as Json;
   const kind = typeof frame.type === 'string' ? frame.type : '';

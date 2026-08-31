@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   OmpProvider,
   ResyncBanner,
-  StreamStore,
+  TranscriptStore,
   type OmpBridge,
 } from './omp-provider';
 
@@ -22,7 +22,7 @@ const batch = (seq: number) => ({
 describe('seq-gap detection', () => {
   it('flags gapDetected on non-contiguous batches, no side effects', () => {
     const send = vi.fn();
-    const store = new StreamStore();
+    const store = new TranscriptStore();
     store.send = send;
 
     store.apply(batch(1));
@@ -35,7 +35,7 @@ describe('seq-gap detection', () => {
   });
 
   it('stays flagged across later contiguous batches until resync', () => {
-    const store = new StreamStore();
+    const store = new TranscriptStore();
     store.apply(batch(1));
     store.apply(batch(3));
     store.apply(batch(4)); // contiguous again — gap already happened
@@ -44,7 +44,7 @@ describe('seq-gap detection', () => {
 
   it('resync() sends get_state and clears the flag', () => {
     const send = vi.fn();
-    const store = new StreamStore();
+    const store = new TranscriptStore();
     store.send = send;
     store.apply(batch(1));
     store.apply(batch(3));
