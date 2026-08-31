@@ -8,7 +8,8 @@
   "scripts": {
     "start": "electron-forge start",
     "lint": "eslint --ext .ts,.tsx .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "playwright test"
   },
   "keywords": [],
   "author": {
@@ -21,6 +22,7 @@
     "@electron-forge/plugin-fuses": "7.11.2",
     "@electron-forge/plugin-vite": "7.11.2",
     "@electron/fuses": "1.8.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "16.1.0",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { Transport } from './transport';
 import { OmpPump } from './omp-pump';
 import { FrameDecoder } from './omp-rpc';
+import { PerfReplay, parsePerfReplayEnv } from './perf-replay';
 
 // Scaffold literals mirror assets/theme/light.toml:
 // app.surfaces.titlebar, app.text.primary, app.layout.titlebar_height.
@@ -43,7 +44,18 @@ const createWindow = () => {
   transport = new Transport();
   // Replay timer is local to this window; close clears it even mid-capture.
   let replayTimer: ReturnType<typeof setInterval> | null = null;
-  if (process.env.OMP_REPLAY_FIXTURE) {
+  // Synthetic perf source is likewise per-window; disposed on close.
+  let perfReplay: PerfReplay | null = null;
+  const perfOpts = parsePerfReplayEnv(process.env.OMP_PERF_REPLAY);
+  if (perfOpts !== null) {
+    // Synthetic 60 fps source for the Playwright perf check (issue #19):
+    // seeds tens of thousands of rows, then streams updates at 60 events/s.
+    // Run: OMP_PERF_REPLAY=30000,10000 npm start
+    // Construction is enough — start is deferred to did-finish-load so the
+    // Transport has a renderer port attached before frames begin queueing
+    // (the pending cap of 256 would otherwise drop-oldest during load).
+    perfReplay = new PerfReplay(transport, perfOpts);
+  } else if (process.env.OMP_REPLAY_FIXTURE) {
     // Spawn-less replay for dev (issue #20 acceptance): stream the recorded
     // capture through the real decoder + transport at ~60 events/s so the
     // pane visibly streams — no live `omp` required.
@@ -82,12 +94,15 @@ const createWindow = () => {
     const channel = new MessageChannelMain();
     transport?.attach(channel.port1);
     mainWindow.webContents.postMessage('omp-port', null, [channel.port2]);
+    perfReplay?.start();
   });
   mainWindow.on('closed', () => {
     if (replayTimer !== null) {
       clearInterval(replayTimer);
       replayTimer = null;
     }
+    perfReplay?.dispose();
+    perfReplay = null;
     // taskkill /t /f — child.kill() would orphan LSP/extension grandchildren.
     pump?.dispose();
     pump = null;
