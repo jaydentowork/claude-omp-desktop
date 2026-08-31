@@ -1,3 +1,6 @@
 # Recorded omp session capture must stay byte-exact — the decoder
 # equivalence test compares raw bytes against this fixture.
 *.ndjson -text
+# Decoder parity golden: emitted from the Rust archive on Unix; a CRLF
+# checkout would silently break the line-by-line diff on Windows.
+*.jsonl -text
