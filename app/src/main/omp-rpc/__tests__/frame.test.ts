@@ -62,6 +62,18 @@ describe('decodeFrame', () => {
     expect(() => decodeFrame('not json')).toThrowError(DecodeError);
   });
 
+  it('enforces the physical cap in UTF-8 bytes, not JS string length', () => {
+    const line = 'é'.repeat((1 << 20) / 2 + 1);
+    expect(line.length).toBeLessThan(1 << 20);
+    try {
+      decodeFrame(line);
+      throw new Error('expected decodeFrame to reject an oversized line');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DecodeError);
+      expect((error as DecodeError).kind).toBe('frame_too_large');
+    }
+  });
+
   it('rejects rpc_chunk lines — those need the stateful decoder', () => {
     expect(() => decodeFrame('{"type":"rpc_chunk","chunkId":"c","index":0,"count":1,"byteLength":1,"data":"eA=="}')).toThrowError(DecodeError);
   });

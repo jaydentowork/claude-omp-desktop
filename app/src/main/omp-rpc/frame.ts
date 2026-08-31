@@ -198,10 +198,11 @@ export class FrameDecoder {
 }
 
 function parseLine(line: string): Record<string, unknown> {
-  // The Rust decoder caps on byte length; JS strings are UTF-16, so measure
-  // UTF-8 bytes only when the character count alone could exceed the cap.
-  if (line.length > MAX_PHYSICAL_FRAME_BYTES) {
-    throw new DecodeError('frame_too_large', `line of ${line.length} chars exceeds 1 MiB cap`);
+  // Rust caps on UTF-8 byte length. JS `string.length` is UTF-16 code units
+  // and underreports UTF-8 bytes for non-ASCII; check the wire-byte length.
+  // `Buffer.byteLength` is O(n) regardless; the cost is paid once per line.
+  if (Buffer.byteLength(line, 'utf8') > MAX_PHYSICAL_FRAME_BYTES) {
+    throw new DecodeError('frame_too_large', `line of > 1 MiB UTF-8 bytes rejected`);
   }
   let value: unknown;
   try {
