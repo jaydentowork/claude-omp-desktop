@@ -1,12 +1,12 @@
-# Window shell and pane layout — ticket 06
+# Window shell and pane layout
 
-A throwaway prototype (`crates/claude-omp-desktop/src/shell.rs`) renders the
-decisions below against the measured geometry from
-`Claude Code Images/light-view.png` (1200×805). It opens and looks right
-against the screenshot — the spec, not the artifact, is what tickets 07–09
-build against.
+The Electron renderer reads the geometry below from
+`assets/theme/light.toml` and renders against the measured values from
+`Claude Code Images/light-view.png` (1200×805). Tokens, not hardcoded
+CSS, are the source of truth; a token edit re-themes the running app
+via the existing dev-mode watcher.
 
-## Geometry (locked, from ticket 05)
+## Geometry (locked)
 
 | Surface | Width | Height |
 |---|---|---|
@@ -19,31 +19,34 @@ build against.
 | Pane dividers | 1 px | — |
 
 All values live in `[app.layout]` and `[app.composer]` of
-`assets/theme/light.toml`. The token file is the source of truth; a token
-edit re-themes the running prototype via the existing watcher.
+`assets/theme/light.toml`. The token file is the source of truth.
 
 ## Decision 1 — window chrome: **custom (client decorations)**
 
-`WindowDecorations::Client`, with `titlebar: Some(TitlebarOptions {
-appears_transparent: true, .. })` to suppress Win32's painted titlebar.
-The `shell.rs` titlebar div marks its non-button area as
-`WindowControlArea::Drag` and each control button as
-`Min`/`Max`/`Close`. That is what keeps Windows snap layouts and the
-Win11 maximize-hover flyout working on a frameless window — without
-`WindowControlArea` markings, clicks in those regions are ordinary mouse
-events.
+`titleBarStyle: 'hidden'` + `titleBarOverlay: true` on the
+`BrowserWindow`. Suppresses Win32's painted titlebar; the renderer
+draws the titlebar in HTML/CSS, the OS still owns the minimize /
+maximize / close buttons in the overlay's reserved region.
+
+This is what keeps Windows Snap Layouts and the Win11 maximize-hover
+flyout working on a frameless window — the WCO maximize button is the
+native one, so the OS treats hover the same way as any other app.
+**Do not draw a custom maximize button.** Custom buttons in HTML
+silently disable Snap Layouts (the OS detects the maximize button via
+`WM_NCHITTEST` returning `HTMAXBUTTON`; an HTML button returns
+`HTCLIENT`). Documented Electron limitation
+(electron/electron#40706 and the related overlay-state issues
+#41786/#32285/#52208/#38431).
 
 The screenshot's left cluster (`hamburger · sidebar toggle · search ·
-back · forward`) is omp-specific navigation, so it does not survive from
-any standard frame. Native decorations were rejected because they make
-that cluster impossible.
+back · forward`) is omp-specific navigation, so it does not survive
+from any standard frame. Native decorations were rejected because they
+make that cluster impossible.
 
-**Titlebar height delta:** `gpui-component`'s `TITLE_BAR_HEIGHT = px(34.)`
-is not overridable through their `TitleBar` API, and the measured height
-is 44 px. The prototype does **not** use their `TitleBar` for this reason;
-the titlebar is a raw `div().h(px(t.titlebar_height))`. If a future ticket
-wants `TitleBar`, the resolution is to either patch the constant locally
-or extend `gpui-component` upstream — neither is done here.
+**Titlebar height:** WCO overlay height is set via
+`titleBarOverlay: { height: 44 }` to match the measured value. CSS
+pads the drag region to the same height so the custom titlebar sits
+flush against the overlay's buttons.
 
 ## Decision 2 — the Cowork tab: **drop it**
 
@@ -56,13 +59,14 @@ The session title moves into the transcript pane's own header (with the
 screenshot's geometry because the project header no longer needs to clear
 a tab strip.
 
-If omp later needs a tabbed surface, the right place is `gpui-component`'s
-`tab` module inside the transcript pane — not the titlebar.
+If omp later needs a tabbed surface, it lives inside the transcript
+pane — not the titlebar.
 
 ## Decision 3 — three-pane skeleton
 
 `sidebar (288) | transcript (flex) | tasks (283)`, with two 1 px dividers
-at `border` colour (`#e8e8e8`).
+at `border` colour (`#e8e8e8`). CSS grid with fixed-width columns and a
+flex middle.
 
 | Pane | Width | Resizable | Collapsible | Persisted |
 |---|---|---|---|---|
@@ -72,12 +76,11 @@ at `border` colour (`#e8e8e8`).
 
 Collapse is implemented now (titlebar toggle for sidebar, panel header
 button for tasks). **Resizability and persistence are deferred.** Both
-want a `notify`-watched preferences file analogous to the token file —
-adding the watcher, the TOML schema, and the resize drag handlers in this
-ticket would crowd out the questions it is meant to settle.
+want a dev-watcher-watched preferences file analogous to the token file
+— adding the watcher, the schema, and the resize drag handlers in the
+scaffold would crowd out the questions it is meant to settle.
 
-Add when: a user actually complains about a fixed 288 px sidebar. Until
-then, the prototype demonstrates the fixed layout.
+Add when: a user actually complains about a fixed 288 px sidebar.
 
 ## Decision 4 — sidebar contents
 
@@ -97,7 +100,7 @@ selects; selection is in-memory only.
 
 **Project mapping:** the project group header reads `abm` (the encoded
 cwd's directory name) from the session directory layout. One group per
-cwd; the prototype hardcodes a single group because it has no real
+cwd; the dev build hardcodes a single group because it has no real
 sessions.
 
 ## Decision 5 — status bar
@@ -124,7 +127,7 @@ no live session.
 A `Bypass permissions` chip is rendered; switching it triggers a local
 state change and re-issues the session permission on next prompt.
 
-### Center — prototype-only readout
+### Center — dev-only readout
 
 The centre of the status bar carries `tokens ok · N reload(s)` (or the
 last-good error) so a token edit is visibly applied. The real app
@@ -137,31 +140,28 @@ removes this region entirely.
 
 **Git strip (`abm  master   +416 −0   Commit changes`):** **deferred,
 not MVP.** It needs a git integration nothing else in the MVP requires,
-and the screenshot is the only signal that anyone uses it. Rendered in
-the prototype as a dimmed card labelled `git strip — deferred, not MVP`
-so the space it would occupy is visible in the layout.
+and the screenshot is the only signal that anyone uses it. Rendered
+in the dev build as a dimmed card labelled `git strip — deferred, not
+MVP` so the space it would occupy is visible in the layout.
 
 Add when: a real user asks for in-app git status. The strip then reads
-from a `git2` status call against `<encoded-cwd>` and renders behind the
+from a `simple-git` call against `<encoded-cwd>` and renders behind the
 composer.
 
-## What the prototype borrows from gpui-component
+## Renderer stack (locked)
 
-`gpui_component::init(cx)` is called (it sets up the icon set and the
-default `Theme` that the components read). Beyond that, the prototype
-intentionally uses **raw `div()` everywhere** rather than `Sidebar`,
-`SidebarMenuItem`, `TitleBar`, and `StatusBar` from the library.
-
-Why: those components read colours from `cx.theme()`, and the
-`Theme::default()` is not our token values. For a measurement prototype
-that would put their palette between us and the numbers we are checking.
-The real app's job is to populate `cx.theme()` from `assets/theme/light.toml`
-on every hot-reload — ticket 02's answer says so. The prototype skips
-that mapping because it is one file's worth of work, not because the
-mapping is unimportant.
-
-When the real app starts (after ticket 10 settles the workspace), the
-sidebar and titlebar should migrate to `gpui-component` and read our
-tokens through `cx.theme()`. The prototype's `shell.rs` is throwaway —
-its job is to make the layout decisions visible, not to be the start of
-the production shell.
+- React + TypeScript via Vite.
+- `@tanstack/react-virtual` for both the transcript list and any
+  long scroll region (see `docs/transcript-rendering.md` §4 for the
+  virtualization contract).
+- `streamdown` for assistant message bodies (see
+  `docs/transcript-rendering.md` §5).
+- shiki via `@streamdown/code` for syntax highlighting — lazy, on
+  expand.
+- Tokens via CSS custom properties generated from
+  `assets/theme/light.toml` at build time; the file itself stays TOML
+  and is loaded directly in dev for the hot-reload loop.
+- IPC: `MessageChannelMain` for the hot transcript stream
+  (renderer-side `MessagePortMain` paired with the main-process port
+  that the `omp-rpc` codec feeds); `ipcRenderer.invoke` for cold
+  request/response only. See `docs/research/web-stack-choice.md` §2.

@@ -8,18 +8,18 @@
 # without a recompile. It is also embedded at compile time as the release
 # default, so a shipped build never depends on this file existing.
 #
-# `[semantic]` maps 1:1 onto gpui-component's `SemanticThemeTokens`.
-# `[app]` holds everything their scale cannot express (measured pane widths,
-# per-surface colours). Both halves are ours; `[semantic]` is simply the
-# subset with a downstream consumer.
+# `[semantic]` holds the general theme palette/typography; `[app]` holds
+# everything a generic scale cannot express (measured pane widths,
+# per-surface colours). Both compile to CSS custom properties — see
+# `docs/theme-tokens.md` Half B. Section names are historical; renaming
+# buys nothing and the provenance comments reference them.
 
 [meta]
 name = "claude-light"
 appearance = "light"      # dark mode ships as a sibling file, same schema
 
 # ---------------------------------------------------------------------------
-# [semantic] -> gpui_component::SemanticThemeTokens
-# Field names match theirs exactly so the mapping stays mechanical.
+# [semantic] — general palette / typography
 # ---------------------------------------------------------------------------
 
 [semantic.colors]
@@ -103,7 +103,7 @@ md = []
 lg = []
 
 # ---------------------------------------------------------------------------
-# [app] — measured values gpui-component's scale cannot hold
+# [app] — measured values a generic scale cannot hold
 # ---------------------------------------------------------------------------
 
 [app.layout]

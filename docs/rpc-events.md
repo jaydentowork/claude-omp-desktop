@@ -1,6 +1,6 @@
 # omp RPC event & command reference
 
-Reference for the GPUI desktop client. Cite this instead of re-reading the 29 KB spec.
+Reference for the desktop client. Cite this instead of re-reading the 29 KB spec.
 
 **Transport:** one `omp --mode rpc-ui --cwd <cwd>` child per session, NDJSON over stdio.
 One JSON object per line, stdin = commands, stdout = ready frame + responses + events.
@@ -209,11 +209,11 @@ re-renders the whole streaming bubble"* and therefore drops all but the latest p
 update (`lib/message-update-coalescer.ts:1-12`) [V]. **Dropping intermediate
 `message_update` frames is safe** — proof that they are snapshots.
 
-> **Recommendation for GPUI:** snapshot replace, plus coalescing. omp emits
+> **Recommendation:** snapshot replace, plus coalescing. omp emits
 > `message_update` per token batch, far above display rate. Buffer the latest pending
 > update and flush on the frame clock. ompweb uses `requestAnimationFrame` with a 50 ms
 > trailing-timer fallback for hidden tabs (`lib/message-update-coalescer.ts:27-38`) [V];
-> the GPUI analogue is flushing once per redraw.
+> the renderer equivalent is a `requestAnimationFrame`-scheduled flush.
 >
 > **Coalescer ordering contract** (`lib/message-update-coalescer.ts:8-12`, implemented at
 > `:62-78`) [V] — reproduce this exactly:

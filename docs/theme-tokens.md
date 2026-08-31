@@ -1,6 +1,6 @@
 # Theme tokens: measurement method and loader design
 
-Companion to `assets/theme/light.toml`. Resolves ticket 05.
+Companion to `assets/theme/light.toml`.
 
 ## Half A — how the values were measured
 
@@ -63,74 +63,67 @@ trust the rest.
    Expect to nudge these first when comparing side by side.
 3. **`destructive` / `diff_removed`.** The screenshot contains no error state,
    and the `−0` renders too dark to sample cleanly. Both are placeholders.
-4. **Shadows.** Cards render flat; no drop shadow was measurable. `ShadowTokens`
-   are empty rather than invented.
+4. **Shadows.** Cards render flat; no drop shadow was measurable. Shadow
+   tokens are empty rather than invented.
 5. **Hover states.** No hover is captured in a static screenshot. Unmeasured.
-6. **DPI.** All values are 1×. GPUI works in logical pixels, so this should be
-   correct, but it is untested on a scaled display.
+6. **DPI.** All values are 1×. CSS pixels are logical pixels, so the values
+   transfer directly, but rendering is untested on a scaled display —
+   verify at 125 %/150 % Windows scaling (and note
+   electron/electron#52208: `titleBarOverlay.height` has a known DPI
+   resolution bug to check against the pinned Electron version).
 
 ## Half B — loader design
 
 ### Format: TOML
 
-Chosen over RON and JSON. It supports comments (which the file uses heavily to
-carry provenance), reads cleanly for a flat token set, and `toml` +`serde` are
-already ubiquitous in a Rust dep graph. RON would be marginally more idiomatic
-but is unfamiliar to anyone not writing Rust daily; JSON forbids comments,
-which would strand the measurement notes in a separate document.
+Kept from the original design. It supports comments (which the file uses
+heavily to carry provenance) and reads cleanly for a flat token set.
+JSON forbids comments, which would strand the measurement notes in a
+separate document. The `[semantic]` / `[app]` section names are
+historical (the split once mirrored a Rust theming library's schema) —
+they stay because renaming buys nothing and the provenance comments
+reference them.
 
-### Shape: two sections, one file
+### Consumption: CSS custom properties
 
-```toml
-[semantic]   # maps 1:1 onto gpui_component::SemanticThemeTokens
-[app]        # measured values their scale cannot express
-```
+The token file compiles to CSS custom properties on `:root`:
 
-Per ticket 02, our file is the **source of truth** and populates their
-`SemanticThemeTokens` on load. The split exists because their scale genuinely
-cannot hold what we measured: six `TextStyleToken`s can't carry the full type
-scale, and t-shirt spacing (`xxs`…`xxl`) can't express a 288 px sidebar.
-
-Field names under `[semantic]` match theirs **exactly**, so the mapping is
-mechanical — a field-for-field struct copy, no lookup table, nothing to drift.
-`[app]` invents names only where nothing corresponds.
-
-### Mapping function
-
-Runs at startup and on every reload:
-
-```rust
-fn apply(tokens: &Tokens, cx: &mut App) {
-    cx.set_theme_tokens(tokens.semantic.to_gpui_component());  // mechanical copy
-    cx.set_global(tokens.app.clone());                          // our own reads
+```css
+:root {
+  --color-background: #fcfcfb;   /* [semantic.colors] background */
+  --text-primary: #0b0b0b;       /* [app.text] primary */
+  --sidebar-width: 288px;        /* [app.layout] sidebar_width */
+  /* ... every token, mechanically */
 }
 ```
 
+The mapping is a small build script (`tokens-to-css`), run by Vite at
+build time and by the dev watcher on token-file change. Naming is
+mechanical — TOML path → kebab-case variable — no lookup table, nothing
+to drift. Components never hardcode a value the token file carries.
+
 ### Watching
 
-`notify` on the token file, debounced ~100 ms (editors write in bursts and
-would otherwise trigger several reloads per save).
+Dev mode: the main process watches the token file (`fs.watch`,
+debounced ~100 ms — editors write in bursts), regenerates the CSS
+variables, and pushes them to the renderer, which swaps the values on
+`document.documentElement` without a reload.
 
-**On a malformed file: keep the last good values and surface the parse error
-in-app.** Never fall back to defaults — silently reverting to a different
-theme mid-edit is worse than showing stale values with an error, because the
-developer cannot tell whether their edit applied. Retain the last-good `Tokens`
-in memory precisely for this case.
+**On a malformed file: keep the last good values and surface the parse
+error in-app.** Never fall back to defaults — silently reverting to a
+different theme mid-edit is worse than showing stale values with an
+error, because the developer cannot tell whether their edit applied.
+Retain the last-good tokens in memory precisely for this case.
 
 ### Ship shape
 
-```rust
-const DEFAULT_LIGHT: &str = include_str!("../assets/theme/light.toml");
-```
-
-Embedded at compile time. On startup, if a token file exists at the dev path,
-load and watch it; otherwise use the embedded copy. A release build never
-depends on a loose file, and hot-watching costs nothing in production because
-the watcher is only armed when an on-disk file is found.
+Release builds embed the generated CSS at build time; a shipped build
+never depends on a loose token file. The watcher is only armed in dev.
 
 ### Dark mode later
 
-A sibling `dark.toml` with the same schema. `[meta].appearance` distinguishes
-them. Because every name is semantic (`text.muted`, not `gray_500`), the dark
-file is a value swap with no code change — which was the point of insisting on
+A sibling `dark.toml` with the same schema. `[meta].appearance`
+distinguishes them; the CSS layer swaps the variable set. Because every
+name is semantic (`text.muted`, not `gray_500`), the dark file is a
+value swap with no code change — which was the point of insisting on
 semantic naming.

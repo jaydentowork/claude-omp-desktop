@@ -7,8 +7,9 @@ coding agent. Electron + React/TypeScript. Pixel-faithful Claude Code
 Desktop light theme, minus Cowork. MVP is Windows-only. Source of truth
 for the UI design: `docs/rpc-events.md`, `docs/transcript-rendering.md`,
 `docs/window-shell.md`, `docs/theme-tokens.md`, `docs/subagent-panel.md`,
-`docs/model-thinking-switcher.md`, and the issue map at
-`.scratch/omp-desktop/map.md`.
+`docs/model-thinking-switcher.md`. Specs are engine-agnostic — the
+archived GPUI/Rust build used them directly, the Electron rebuild does
+the same.
 
 **Stack decision**: `docs/research/web-stack-choice.md`. Electron
 (pinned Chromium beats WebView2 evergreen for pixel fidelity), Electron
@@ -16,9 +17,9 @@ Forge + `@electron-forge/plugin-vite`, React + TS, `@tanstack/react-virtual`,
 `streamdown` + `shiki` via `@streamdown/code`.
 
 **History**: the first implementation was native GPUI (Rust). It lives
-frozen on the local branch `archive/gpui-rust` — reference only, never
-merged back. Tickets 01–10 in `.scratch/omp-desktop/issues/` document
-that era; the engine-agnostic specs in `docs/` carry over unchanged.
+in a separate archived clone at `T:\Code\OMP\claude-omp-desktop-gpui-archive`
+(full history + the frozen-WIP branch `archive/gpui-rust`) — reference
+only, never merged back.
 
 ## Layout (target — scaffold not yet landed)
 
