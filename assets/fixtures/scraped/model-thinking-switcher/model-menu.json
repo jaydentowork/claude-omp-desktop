@@ -1,0 +1,18 @@
+{
+  "menuDOM": "<div role=\"menuitemradio\" id=\"base-ui-_r_lt_\" tabindex=\"-1\" aria-keyshortcuts=\"1\" aria-checked=\"false\" class=\"cds-reset flex w-full items-center gap-xs compact:px-2 comfortable:px-2.5 py-[calc((var(--cds-h-control)-var(--cds-leading-body))/2)] rounded text-body [--cds-shortcut-cap-ink:var(--cds-text-muted)] select-none outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled data-[disabled]:pointer-events-none text-primary data-[highlighted]:bg-fill-ghost-hover\"><span class=\"min-w-0 flex-1 truncate\">Fable 5</span><span class=\"ml-md flex shrink-0 items-center gap-xs\"><span class=\"flex size-icon shrink-0 items-center justify-center pointer-coarse:-mr-1\" style=\"color: var(--cds-fill-accent);\"></span><span aria-hidden=\"true\" data-cds=\"Shortcut\" data-variant=\"text\" class=\"inline-flex shrink-0 items-baseline gap-[0.3em] pointer-coarse:hidden text-footnote tabular-nums\"><kbd class=\"font-inherit [color:var(--cds-shortcut-cap-ink)]\">1</kbd></span></span></div>",
+  "menu": {
+    "color": "rgb(11, 11, 11)",
+    "bg": "rgba(0, 0, 0, 0)",
+    "ff": "anthropic-sans, system-ui, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+    "fs": "13px",
+    "fw": "400",
+    "lh": "19px",
+    "pad": "2.5px 8px",
+    "border": "0px solid color(srgb 0.0431373 0.0431373 0.0431373 / 0.1)",
+    "radius": "6px",
+    "shadow": "none",
+    "gap": "6px",
+    "h": "24px",
+    "w": "120px"
+  }
+}
