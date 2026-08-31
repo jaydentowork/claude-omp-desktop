@@ -182,6 +182,18 @@ describe('fixture parity vs the Rust decoder', () => {
     });
   });
 
+  it('fixtures are LF-only (CRLF checkout guard)', () => {
+    // The golden was emitted on Unix; git autocrlf turning it into CRLF on a
+    // Windows checkout makes every line-by-line comparison fail. Guarded by
+    // `-text` rules in .gitattributes — this fails loud if those regress.
+    expect(GOLDEN.includes('\r'), 'golden contains CR — check .gitattributes *.jsonl -text').toBe(
+      false,
+    );
+    expect(FIXTURE.includes('\r'), 'fixture contains CR — check .gitattributes *.ndjson -text').toBe(
+      false,
+    );
+  });
+
   it('the capture is a real streaming turn (fixture guard)', () => {
     // If someone re-records the fixture without a streaming turn, the parity
     // test above becomes vacuous. Same guard as the Rust suite.
