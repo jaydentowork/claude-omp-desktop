@@ -1,10 +1,5 @@
-import { TranscriptPane } from './transcript-pane';
+import { AppShell } from './app-shell';
 
 export function App() {
-  return (
-    <>
-      <div className="titlebar" />
-      <TranscriptPane />
-    </>
-  );
+  return <AppShell />;
 }
