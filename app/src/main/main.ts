@@ -21,6 +21,8 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    // Transcript hard floor (docs/window-shell.md §3): 360 px pane min-width.
+    minWidth: 360,
     // Window Controls Overlay: native caption buttons over web content.
     // Never draw a custom maximize button — Snap Layouts only attach to the
     // native WCO button.
