@@ -1,0 +1,3 @@
+# Recorded omp session capture must stay byte-exact — the decoder
+# equivalence test compares raw bytes against this fixture.
+*.ndjson -text

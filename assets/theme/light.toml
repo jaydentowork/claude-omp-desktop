@@ -1,0 +1,147 @@
+# omp-desktop — light theme tokens
+#
+# Source of truth for all colours, spacing, type and radii. Measured from
+# `Claude Code Images/light-view.png` (1200x805, 1x DPI) by direct pixel
+# sampling — see `docs/theme-tokens.md` for method and per-value provenance.
+#
+# This file is hot-watched in dev: edit, save, and the running app re-themes
+# without a recompile. It is also embedded at compile time as the release
+# default, so a shipped build never depends on this file existing.
+#
+# `[semantic]` maps 1:1 onto gpui-component's `SemanticThemeTokens`.
+# `[app]` holds everything their scale cannot express (measured pane widths,
+# per-surface colours). Both halves are ours; `[semantic]` is simply the
+# subset with a downstream consumer.
+
+[meta]
+name = "claude-light"
+appearance = "light"      # dark mode ships as a sibling file, same schema
+
+# ---------------------------------------------------------------------------
+# [semantic] -> gpui_component::SemanticThemeTokens
+# Field names match theirs exactly so the mapping stays mechanical.
+# ---------------------------------------------------------------------------
+
+[semantic.colors]
+background = "#fcfcfb"              # transcript / titlebar surface
+foreground = "#0b0b0b"              # primary text
+surface = "#f2f2f1"                 # cards, inline-code, git strip
+surface_foreground = "#0b0b0b"
+primary = "#d97757"                 # Claude brand orange (glyph, active marks)
+primary_foreground = "#ffffff"
+secondary = "#fbfbf9"               # sidebar / status-bar surface
+secondary_foreground = "#52514e"
+muted = "#edece8"                   # selected-row tint
+muted_foreground = "#898781"        # card metadata, de-emphasised labels
+accent = "#184f95"                  # links ("View transcript")
+accent_foreground = "#ffffff"
+destructive = "#b3261e"             # UNVERIFIED: no red text in the source
+                                    # screenshot. Placeholder — measure from a
+                                    # failure state before trusting it.
+destructive_foreground = "#ffffff"
+border = "#e8e8e8"                  # dividers (titlebar underline, status bar)
+input = "#e1e1e0"                   # composer border
+ring = "#d97757"                    # focus ring; assumed to track `primary`
+
+[semantic.radius]
+none = 0.0
+sm = 4.0
+md = 6.0
+lg = 8.0
+xl = 12.0
+full = 9999.0
+
+[semantic.spacing]
+xxs = 2.0
+xs = 4.0
+sm = 8.0
+md = 12.0
+lg = 16.0
+xl = 24.0
+xxl = 32.0
+
+[semantic.typography]
+sans = "Styrene B, Segoe UI, system-ui"   # VERIFY: face not identifiable from
+mono = "Cascadia Mono, Consolas"          # a screenshot. Confirm against the
+                                          # real app before shipping.
+
+[semantic.typography.xs]
+size = 11.0
+line_height = 16.0
+weight = 400
+
+[semantic.typography.sm]
+size = 12.0
+line_height = 18.0
+weight = 400
+
+[semantic.typography.md]
+size = 14.0
+line_height = 22.0
+weight = 400
+
+[semantic.typography.lg]
+size = 15.0
+line_height = 24.0
+weight = 500
+
+[semantic.typography.xl]
+size = 18.0
+line_height = 28.0
+weight = 600
+
+[semantic.typography.mono_md]
+size = 13.0
+line_height = 20.0
+weight = 400
+
+[semantic.shadow]
+# Cards in the source render flat — no measurable drop shadow. Kept minimal
+# rather than invented.
+sm = []
+md = []
+lg = []
+
+# ---------------------------------------------------------------------------
+# [app] — measured values gpui-component's scale cannot hold
+# ---------------------------------------------------------------------------
+
+[app.layout]
+sidebar_width = 288.0               # seam at x=287/288
+tasks_panel_width = 283.0           # panel spans x=897..1180
+titlebar_height = 44.0              # divider at y=44
+statusbar_height = 33.0             # divider at y=792, window is 805 tall
+sidebar_row_height = 26.0           # selected tint spans y=188..214
+pane_divider_width = 1.0
+
+[app.surfaces]
+titlebar = "#fcfcfb"
+sidebar = "#fbfbf9"
+transcript = "#fcfcfb"
+tasks_panel = "#fcfcfb"
+statusbar = "#fbfbf9"
+card = "#f2f2f1"
+composer = "#fefefe"
+git_strip = "#f2f2f1"
+inline_code = "#f2f2f1"
+
+[app.text]
+primary = "#0b0b0b"                 # body copy, session title, sidebar selected
+secondary = "#52514e"               # unselected sidebar rows
+muted = "#898781"                   # card titles and metadata
+link = "#184f95"
+diff_added = "#1e9e3c"              # "+416"
+diff_removed = "#b3261e"            # UNVERIFIED: "-0" renders too dark to
+                                    # sample cleanly. Re-measure on a real diff.
+
+[app.card]
+padding_x = 13.0                    # card x=917..1171, text starts x=930
+padding_y = 14.0                    # card top y=115, title baseline ~y=129
+gap = 4.0                           # inter-card vertical gap
+radius = 8.0
+
+[app.composer]
+radius = 12.0
+border = "#e1e1e0"
+padding_x = 12.0
+height = 44.0                       # y=713..757
