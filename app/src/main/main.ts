@@ -1,9 +1,7 @@
 import { app, BrowserWindow, MessageChannelMain } from 'electron';
 import path from 'node:path';
 import { Transport } from './transport';
-
-// Reserved seam: app/src/main/omp-rpc/ — TS decoder module lands with the
-// streaming ticket (parity vs assets/fixtures/streaming-capture.ndjson).
+import { OmpPump } from './omp-pump';
 
 // Scaffold literals mirror assets/theme/light.toml:
 // app.surfaces.titlebar, app.text.primary, app.layout.titlebar_height.
@@ -14,6 +12,8 @@ const WCO_FG = '#0b0b0b';
 
 /** One transport per window; replaced on reload. */
 let transport: Transport | null = null;
+/** One omp child per window; taskkill-tree'd on close. */
+let pump: OmpPump | null = null;
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -39,12 +39,24 @@ const createWindow = () => {
   // Fresh channel per load — a transferred port2 is neutered, so dev-loop
   // reloads must re-mint the pair and rebind port1.
   transport = new Transport();
+  // omp child: source of the frame stream. Session management (picking a
+  // cwd per session, restart on switch) is a later ticket — for now one
+  // child in the app cwd, overridable for dev via OMP_PATH / OMP_CWD.
+  pump = new OmpPump({
+    ompPath: process.env.OMP_PATH ?? 'omp',
+    cwd: process.env.OMP_CWD ?? process.cwd(),
+    transport,
+  });
+  pump.start();
   mainWindow.webContents.on('did-finish-load', () => {
     const channel = new MessageChannelMain();
     transport?.attach(channel.port1);
     mainWindow.webContents.postMessage('omp-port', null, [channel.port2]);
   });
   mainWindow.on('closed', () => {
+    // taskkill /t /f — child.kill() would orphan LSP/extension grandchildren.
+    pump?.dispose();
+    pump = null;
     transport?.dispose();
     transport = null;
   });
