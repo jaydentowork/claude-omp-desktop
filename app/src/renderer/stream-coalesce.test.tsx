@@ -60,6 +60,24 @@ describe('main → renderer coalescing (10k frames at 60 fps)', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
+  it('keeps pre-attach frames without creating a renderer sequence gap', () => {
+    const transport = new Transport();
+    transport.ingest(updateFrame('before renderer'));
+    vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
+
+    const { port, bridge } = fakeWiring();
+    const store = new TranscriptStore();
+    bridge.subscribe(store.apply);
+    transport.attach(port);
+    transport.ingest(updateFrame('after renderer'));
+    vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
+
+    const state = store.getState();
+    expect(state.framesReceived).toBe(2);
+    expect(state.lastSeq).toBe(1);
+    expect(state.gapDetected).toBe(false);
+  });
+
   it(`delivers ≤ ${MAX_DELIVERED} batches to the store`, () => {
     const { port, bridge } = fakeWiring();
     const transport = new Transport();

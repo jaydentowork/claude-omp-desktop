@@ -6,9 +6,10 @@
 // `docs/transcript-rendering.md` §1 (pane header 44 px, list flex, composer
 // slot 88 px reserved below — composer itself ships with another slice).
 
-import { memo, useCallback, useRef, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Streamdown } from 'streamdown';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { code } from '@streamdown/code';
 import { useOmpStore, useOmpStream } from './omp-provider';
 import type { ChatMessage } from '../main/omp-rpc';
 
@@ -23,6 +24,7 @@ export function TranscriptPane({ header, footer }: Props) {
   const { messages, streaming } = useOmpStream();
   const store = useOmpStore();
   const parentRef = useRef<HTMLDivElement>(null);
+  const [atEnd, setAtEnd] = useState(true);
 
   const virtualizer = useVirtualizer({
     count: messages.length,
@@ -35,6 +37,20 @@ export function TranscriptPane({ header, footer }: Props) {
     scrollEndThreshold: 4,
     overscan: 12,
   });
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (el === null) return;
+    const update = () => setAtEnd(virtualizer.isAtEnd());
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => el.removeEventListener('scroll', update);
+  }, [virtualizer]);
+
+  const scrollToEnd = useCallback(() => {
+    if (messages.length === 0) return;
+    virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+  }, [messages.length, virtualizer]);
 
   const toggleTool = useCallback(
     (toolCallId: string) => store.toggleTool(toolCallId),
@@ -74,6 +90,16 @@ export function TranscriptPane({ header, footer }: Props) {
         {streaming && messages.length === 0 && (
           <div className="empty">Waiting for the agent…</div>
         )}
+        {!atEnd && messages.length > 0 && (
+          <button
+            type="button"
+            className="scroll-to-bottom"
+            aria-label="Scroll to bottom"
+            onClick={scrollToEnd}
+          >
+            ↓
+          </button>
+        )}
       </div>
       {footer !== undefined && <div className="pane-footer">{footer}</div>}
     </div>
@@ -91,6 +117,8 @@ const MessageRow = memo(function MessageRow({ message, onToggleTool }: RowProps)
       return <TextRow message={message} />;
     case 'tool':
       return <ToolRow message={message} onToggle={onToggleTool} />;
+    case 'notice':
+      return <NoticeRow message={message} />;
     case 'run_summary':
       return <RunSummaryRow message={message} />;
   }
@@ -114,10 +142,17 @@ function TextRow({ message }: { message: Extract<ChatMessage, { row: 'text' }> }
       </div>
     );
   }
+  if (message.role === 'custom') {
+    // irc_message / custom-type system notice: render the body verbatim, no
+    // markdown — these are upstream-pinned safety wrappers (the recorded
+    // capture wraps a `<system-notice>` body, for example).
+    return <div className="row row-notice">{message.text}</div>;
+  }
   return (
     <div className="row row-assistant">
       <Streamdown
         isAnimating={message.streaming}
+        plugins={message.streaming ? undefined : { code }}
         components={{ p: ({ children }) => <p className="md-p">{children}</p> }}
       >
         {message.text}
@@ -155,6 +190,14 @@ function ToolRow({
       {message.expanded && message.result !== null && (
         <pre className="tool-result">{message.result}</pre>
       )}
+    </div>
+  );
+}
+
+function NoticeRow({ message }: { message: Extract<ChatMessage, { row: 'notice' }> }) {
+  return (
+    <div className="row row-notice" data-level={message.level} role="status">
+      {message.text}
     </div>
   );
 }

@@ -57,6 +57,14 @@ export type ChatMessage =
       rev: number;
     }
   | {
+      /** Inline process/protocol notice (`docs/rpc-events.md` §1.4). */
+      row: 'notice';
+      id: string;
+      level: 'info' | 'warning' | 'error';
+      text: string;
+      rev: number;
+    }
+  | {
       /**
        * Ephemeral turn summary lifted from the trailing assistant message's
        * prefix, e.g. `Ran 4 agents ›`. Not a tool row, not collapsible.
@@ -76,6 +84,7 @@ export type TranscriptEvent =
   | { event: 'message_end'; id: string; role: Role; text: string }
   | { event: 'tool_start'; toolCallId: string; name: string; summary: string }
   | { event: 'tool_end'; toolCallId: string; result: string }
+  | { event: 'notice'; level: 'info' | 'warning' | 'error'; message: string }
   | { event: 'other' };
 
 /** The transcript's source of truth. The pane renders this and nothing else. */
@@ -188,6 +197,7 @@ export class TranscriptModel {
     if (m === undefined) return null;
     switch (m.row) {
       case 'text':
+      case 'notice':
       case 'run_summary':
         return m.text;
       case 'tool':
@@ -252,6 +262,16 @@ export class TranscriptModel {
             break;
           }
         }
+        break;
+      case 'notice':
+        this.messages.push({
+          row: 'notice',
+          id: `notice:${this.revision}`,
+          level: event.level,
+          text: event.message,
+          rev: 0,
+        });
+        this.revision += 1;
         break;
       case 'other':
         break;
@@ -366,9 +386,14 @@ export function toolSummary(name: string, args: unknown): string {
   let summary: string | undefined;
   switch (name.toLowerCase()) {
     case 'bash':
-    case 'shell':
-      summary = field('command');
+    case 'shell': {
+      // Spec §2.5: first non-whitespace token of the command — the verb.
+      // Matches `light-view.png`'s `Bash   git status ›` shape, not the full
+      // command (which is shown only in the expanded body).
+      const cmd = field('command') ?? '';
+      summary = cmd.trim().split(/\s+/, 1)[0] ?? '';
       break;
+    }
     case 'read':
     case 'write':
     case 'edit':
@@ -473,7 +498,19 @@ export function decodeEventValue(v: unknown): TranscriptEvent {
               : JSON.stringify(result),
       };
     }
-    default:
+    default: {
+      // Synthesized notice payload from `OmpPump` (frame-decode failure,
+      // unexpected child exit): carries `level` + `message` but no `type`
+      // field — the wire-shape `{"type":"notice",...}` from omp itself
+      // stays `other` so the Rust-decoder parity golden stays valid.
+      if (
+        kind === '' &&
+        (frame.level === 'info' || frame.level === 'warning' || frame.level === 'error') &&
+        typeof frame.message === 'string'
+      ) {
+        return { event: 'notice', level: frame.level, message: frame.message };
+      }
       return { event: 'other' };
+    }
   }
 }

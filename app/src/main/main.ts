@@ -41,6 +41,8 @@ const createWindow = () => {
   // Fresh channel per load — a transferred port2 is neutered, so dev-loop
   // reloads must re-mint the pair and rebind port1.
   transport = new Transport();
+  // Replay timer is local to this window; close clears it even mid-capture.
+  let replayTimer: ReturnType<typeof setInterval> | null = null;
   if (process.env.OMP_REPLAY_FIXTURE) {
     // Spawn-less replay for dev (issue #20 acceptance): stream the recorded
     // capture through the real decoder + transport at ~60 events/s so the
@@ -53,8 +55,12 @@ const createWindow = () => {
     const decoder = new FrameDecoder();
     const lines = fixture.split('\n').filter((l) => l.trim().length > 0);
     let i = 0;
-    const t = setInterval(() => {
-      if (i >= lines.length) return clearInterval(t);
+    replayTimer = setInterval(() => {
+      if (i >= lines.length) {
+        clearInterval(replayTimer!);
+        replayTimer = null;
+        return;
+      }
       const frame = decoder.feedLine(lines[i++]);
       if (frame === null) return;
       if (frame.kind === 'ready') transport?.ingest({ kind: 'ready', payload: frame.ready });
@@ -78,6 +84,10 @@ const createWindow = () => {
     mainWindow.webContents.postMessage('omp-port', null, [channel.port2]);
   });
   mainWindow.on('closed', () => {
+    if (replayTimer !== null) {
+      clearInterval(replayTimer);
+      replayTimer = null;
+    }
     // taskkill /t /f — child.kill() would orphan LSP/extension grandchildren.
     pump?.dispose();
     pump = null;
