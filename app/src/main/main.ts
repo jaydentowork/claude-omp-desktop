@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, MessageChannelMain } from 'electron';
 import path from 'node:path';
+import { Transport } from './transport';
 
 // Reserved seam: app/src/main/omp-rpc/ — TS decoder module lands with the
 // streaming ticket (parity vs assets/fixtures/streaming-capture.ndjson).
@@ -10,6 +11,9 @@ import path from 'node:path';
 const WCO_HEIGHT = 44;
 const WCO_BG = '#fcfcfb';
 const WCO_FG = '#0b0b0b';
+
+/** One transport per window; replaced on reload. */
+let transport: Transport | null = null;
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -27,6 +31,22 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
+  });
+
+  // Hot IPC transport: ports cross via postMessage('omp-port', ...). The
+  // child pump lands with the omp-spawn ticket; until then
+  // `transport.ingest` is unused but the wiring is live end-to-end.
+  // Fresh channel per load — a transferred port2 is neutered, so dev-loop
+  // reloads must re-mint the pair and rebind port1.
+  transport = new Transport();
+  mainWindow.webContents.on('did-finish-load', () => {
+    const channel = new MessageChannelMain();
+    transport?.attach(channel.port1);
+    mainWindow.webContents.postMessage('omp-port', null, [channel.port2]);
+  });
+  mainWindow.on('closed', () => {
+    transport?.dispose();
+    transport = null;
   });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
