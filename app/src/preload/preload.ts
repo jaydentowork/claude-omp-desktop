@@ -35,6 +35,19 @@ ipcRenderer.on('omp-port', (event) => {
   port.start();
 });
 
+// Teardown: stop forwarding and close the port when the document goes away
+// (window close, reload, navigation). `pagehide` covers the common paths;
+// `beforeunload` catches close flows where pagehide doesn't fire in time.
+// Idempotent — port.close() on a closed port is a no-op.
+function teardown() {
+  listeners.clear();
+  backlog.length = 0;
+  port?.close();
+  port = null;
+}
+window.addEventListener('pagehide', teardown);
+window.addEventListener('beforeunload', teardown);
+
 contextBridge.exposeInMainWorld('omp', {
   /** Subscribe to coalesced frame batches. Returns an unsubscribe fn. */
   subscribe(cb: BatchListener): () => void {
