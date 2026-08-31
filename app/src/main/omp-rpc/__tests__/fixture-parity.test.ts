@@ -89,6 +89,8 @@ function eventJson(e: TranscriptEvent): Json {
       return { event: 'tool_start', toolCallId: e.toolCallId, name: e.name, summary: e.summary };
     case 'tool_end':
       return { event: 'tool_end', toolCallId: e.toolCallId, result: e.result };
+    case 'notice':
+      return { event: 'notice', level: e.level, message: e.message };
     case 'other':
       return { event: 'other' };
   }
@@ -108,6 +110,8 @@ function rowJson(m: ChatMessage): Json {
         result: m.result,
         expanded: m.expanded,
       };
+    case 'notice':
+      return { row: 'notice', id: m.id, level: m.level, text: m.text };
     case 'run_summary':
       return { row: 'run_summary', id: m.id, text: m.text };
   }

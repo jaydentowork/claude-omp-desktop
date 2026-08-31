@@ -103,13 +103,16 @@ export class Transport {
 
   private flushNow(): void {
     if (this.pending.length === 0) return;
+    const port = this.port;
+    // Keep frames until a renderer port exists. `attach()` schedules an
+    // immediate drain; assigning sequence numbers only to delivered batches
+    // prevents a false first-batch gap during startup/replay.
+    if (!port) return;
     const batch = this.pending;
     this.pending = [];
     const seq = ++this.seq;
     this.flushedBatches++;
     this.flushedFrames += batch.length;
-    const port = this.port;
-    if (!port) return; // no renderer — frames dropped on the floor
     // structured clone of one envelope beats N IPC round-trips.
     port.postMessage({ seq, frames: batch });
   }

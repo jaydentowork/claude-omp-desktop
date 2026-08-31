@@ -40,6 +40,10 @@ destructive = "#b3261e"             # UNVERIFIED: no red text in the source
                                     # failure state before trusting it.
 destructive_foreground = "#ffffff"
 border = "#e8e8e8"                  # dividers (titlebar underline, status bar)
+border_subtle = "rgba(11, 11, 11, 0.1)"   # scrape: card/inline-code/table borders
+                                    # are translucent, not opaque grey
+inline_code_bg = "rgba(11, 11, 11, 0.05)" # scrape: inline-code fill is a 5% tint,
+                                    # not the opaque card colour
 input = "#e1e1e0"                   # composer border
 ring = "#d97757"                    # focus ring; assumed to track `primary`
 
@@ -61,9 +65,12 @@ xl = 24.0
 xxl = 32.0
 
 [semantic.typography]
-sans = "Styrene B, Segoe UI, system-ui"   # VERIFY: face not identifiable from
-mono = "Cascadia Mono, Consolas"          # a screenshot. Confirm against the
-                                          # real app before shipping.
+# Corrected by the live scrape of claude.ai/code
+# (assets/fixtures/scraped/transcript/computed-styles.json): the real app
+# ships `anthropic-sans` / `anthropic-mono` web fonts. The trailing names
+# are the fallback stack observed in the scrape.
+sans = "anthropic-sans, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+mono = "anthropic-mono, ui-monospace, Cascadia Mono, Consolas, monospace"
 
 [semantic.typography.xs]
 size = 11.0

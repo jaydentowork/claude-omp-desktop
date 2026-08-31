@@ -6,5 +6,18 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
+    fakeTimers: {
+      // Defaults plus rAF: the renderer coalescer flushes on
+      // requestAnimationFrame, and replay tests drive that clock.
+      toFake: [
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'Date',
+        'requestAnimationFrame',
+        'cancelAnimationFrame',
+      ],
+    },
   },
 });
