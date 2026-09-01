@@ -24,6 +24,11 @@ import {
   decodeEventValue,
   type ChatMessage,
 } from '../main/omp-rpc';
+// Value imports below are cycle-safe: those modules import only *types* from
+// this one, which are erased at compile time.
+import { RpcClient } from './rpc-client';
+import { SubagentStore } from './subagent-store';
+import { SwitcherStore } from './switcher-store';
 
 export interface StreamFrame {
   readonly kind: string;
@@ -81,6 +86,12 @@ export interface TranscriptStoreState extends StreamState {
 export class TranscriptStore {
   private seqState: StreamState = INITIAL;
   private listeners = new Set<() => void>();
+  /** Listeners that receive every raw frame from every batch. Used by the
+   * subagent panel and the model/thinking switcher to react to events the
+   * transcript pipeline drops (`decodeEventValue` folds anything non-message
+   * into `{event:'other'}`). Per-store, not per-frame, so each external store
+   * pulls only what it cares about. */
+  private frameListeners = new Set<(frame: StreamFrame) => void>();
   send: ((command: unknown) => void) | null = null;
 
   readonly model = new TranscriptModel();
@@ -120,10 +131,21 @@ export class TranscriptStore {
     for (const frame of b.frames) {
       const event = decodeEventValue(frame.payload);
       for (const e of this.coalescer.feed(event)) this.model.apply(e);
+      if (this.frameListeners.size > 0) {
+        for (const l of this.frameListeners) l(frame);
+      }
     }
     if (this.coalescer.hasPending()) this.scheduleFlush();
     this.notify();
   };
+
+  /** Subscribe to every frame. Used by the subagent panel + switcher to see
+   * events the transcript pipeline drops (`subagent_*`, `config_update`, etc.).
+   * Returns the unsubscribe fn. */
+  onFrame(cb: (frame: StreamFrame) => void): () => void {
+    this.frameListeners.add(cb);
+    return () => this.frameListeners.delete(cb);
+  }
 
   /** Re-request authoritative state after a seq gap and clear the flag. */
   resync = (): void => {
@@ -162,6 +184,14 @@ export class TranscriptStore {
 
 const TranscriptContext = createContext<TranscriptStore | null>(null);
 
+interface PanelStores {
+  rpc: RpcClient;
+  subagents: SubagentStore;
+  switcher: SwitcherStore;
+}
+
+const PanelContext = createContext<PanelStores | null>(null);
+
 export function OmpProvider({
   children,
   bridge = window.omp,
@@ -170,8 +200,26 @@ export function OmpProvider({
   bridge?: OmpBridge;
 }) {
   const storeRef = useRef<TranscriptStore>();
+  const panelRef = useRef<PanelStores>();
   if (!storeRef.current) storeRef.current = new TranscriptStore();
   const store = storeRef.current;
+  if (!panelRef.current) {
+    panelRef.current = {
+      rpc: new RpcClient(store),
+      subagents: new SubagentStore(),
+      switcher: new SwitcherStore(),
+    };
+  }
+  const panels = panelRef.current;
+
+  useEffect(() => {
+    const offSub = panels.subagents.attach(store, panels.rpc);
+    const offSwitch = panels.switcher.attach(store, panels.rpc);
+    return () => {
+      offSub();
+      offSwitch();
+    };
+  }, [panels, store]);
 
   useEffect(() => {
     if (!bridge) return;
@@ -184,7 +232,17 @@ export function OmpProvider({
     };
   }, [bridge, store]);
 
-  return <TranscriptContext.Provider value={store}>{children}</TranscriptContext.Provider>;
+  return (
+    <TranscriptContext.Provider value={store}>
+      <PanelContext.Provider value={panels}>{children}</PanelContext.Provider>
+    </TranscriptContext.Provider>
+  );
+}
+
+export function usePanelStores(): PanelStores {
+  const panels = useContext(PanelContext);
+  if (!panels) throw new Error('usePanelStores requires <OmpProvider>');
+  return panels;
 }
 
 export function useOmpStream(): TranscriptStoreState {

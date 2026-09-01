@@ -12,6 +12,8 @@
 import { useState } from 'react';
 import { TranscriptPane } from './transcript-pane';
 import { useOmpStream } from './omp-provider';
+import { SubagentPanel } from './subagent-panel';
+import { SwitcherCluster } from './switcher-cluster';
 
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -45,9 +47,8 @@ export function AppShell() {
 }
 
 /** 44 px custom titlebar under the WCO caption buttons (window-shell
- * decision 1). Left: navigation cluster. Right: model/thinking cluster —
- * static chips until the switcher slice (docs/model-thinking-switcher.md)
- * wires them; only the spinner is live (`isTerminal` → `streaming`). */
+ * decision 1). Left: navigation cluster. The model/thinking controls live in
+ * the status bar (window-shell decision 5, wired by the switcher slice). */
 function Titlebar({
   sidebarOpen,
   onToggleSidebar,
@@ -55,7 +56,6 @@ function Titlebar({
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
 }) {
-  const { streaming } = useOmpStream();
   return (
     <div className="titlebar">
       <div className="titlebar-nav">
@@ -78,13 +78,6 @@ function Titlebar({
           ›
         </button>
       </div>
-      <div className="titlebar-model">
-        <span className="model-chip">GPT 5.6 Luna</span>
-        <span className="model-chip">High</span>
-        {streaming && (
-          <span className="model-spinner" role="status" aria-label="Agent running" />
-        )}
-      </div>
     </div>
   );
 }
@@ -100,7 +93,8 @@ function Sidebar() {
 }
 
 /** Tasks panel frame (283 px) with its own 44 px header carrying the
- * collapse button (window-shell §3). Contents are the subagent-panel slice. */
+ * collapse button (window-shell §3). Contents: the subagent panel
+ * (docs/subagent-panel.md). */
 function TasksPanel({ onCollapse }: { onCollapse: () => void }) {
   return (
     <aside className="tasks-panel" aria-label="Tasks">
@@ -115,6 +109,7 @@ function TasksPanel({ onCollapse }: { onCollapse: () => void }) {
           ›
         </button>
       </div>
+      <SubagentPanel />
     </aside>
   );
 }
@@ -137,12 +132,20 @@ function PaneFooter() {
   return <div className="git-strip-placeholder">git strip — deferred, not MVP</div>;
 }
 
-/** 33 px status bar (window-shell decision 5). Account row is local config;
- * the centre dev readout belongs to the theme-watcher ticket. */
+/** 33 px status bar (window-shell decision 5). Left: account row (local
+ * config). Right: controls cluster — the model/thinking switcher's live
+ * labels + the isTerminal-driven spinner. */
 function StatusBar() {
+  const { streaming } = useOmpStream();
   return (
     <div className="statusbar">
       <span className="statusbar-account">Jay · Gateway ⌄</span>
+      <div className="statusbar-controls">
+        <SwitcherCluster />
+        {streaming && (
+          <span className="model-spinner" role="status" aria-label="Agent running" />
+        )}
+      </div>
     </div>
   );
 }

@@ -20,3 +20,11 @@ export type { ChatMessage, TranscriptEvent, Role } from './transcript';
 
 export { decodeEntry, SessionEntryIndex } from './session';
 export type { SessionEntry, HandledEntry, PreservedEntry, SessionEntryBase } from './session';
+
+/**
+ * Prefix of the notice `OmpPump` synthesizes on unexpected child exit
+ * (locked constraint 5). Shared here (electron-free) so the renderer can
+ * recognize a dead child — e.g. the model/thinking switcher dims its labels —
+ * without importing the pump.
+ */
+export const CHILD_EXIT_NOTICE = 'The omp process for this session exited unexpectedly';

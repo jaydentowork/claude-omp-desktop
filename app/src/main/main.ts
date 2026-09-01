@@ -91,6 +91,12 @@ const createWindow = () => {
       transport,
     });
     pump.start();
+    // Upstream path: renderer commands (already JSON objects) become NDJSON
+    // lines on the child's stdin. Replay modes leave onCommand unset — a
+    // command sent with no live child is a no-op, same as a dead child.
+    transport.onCommand = (command) => {
+      pump?.send(JSON.stringify(command));
+    };
   }
   mainWindow.webContents.on('did-finish-load', () => {
     const channel = new MessageChannelMain();
