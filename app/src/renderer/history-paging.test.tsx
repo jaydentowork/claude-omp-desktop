@@ -3,7 +3,7 @@
 // tail, retries `session_busy` on the next terminal agent_end, and restarts
 // from no cursor on `stale_cursor`.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TranscriptModel, historyRows } from '../main/omp-rpc';
 import { TranscriptStore, type StreamBatch } from './omp-provider';
 
@@ -222,5 +222,46 @@ describe('TranscriptStore history paging', () => {
     // Streaming is independent of paging (spec §7.3): rows render, no skeleton.
     expect(store.getState().history).toEqual({ phase: 'idle', hasMore: false });
     expect(store.model.messages).toHaveLength(1);
+  });
+});
+
+describe('TranscriptStore history lifecycle', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('accepts an initial page that arrives after the skeleton timeout', () => {
+    const { store, sent } = storeWithSentLog();
+    store.startHistory();
+    const id = sent[0]?.id;
+
+    vi.advanceTimersByTime(10_000);
+    expect(store.getState().history).toEqual({ phase: 'idle', hasMore: false });
+
+    store.apply(
+      responseBatch(1, {
+        id,
+        success: true,
+        data: { messages: [wireMsg('late', 'user', 'still valid')] },
+      }),
+    );
+    expect(store.model.messages.map((m) => m.id)).toEqual(['late']);
+  });
+
+  it('restarts initial paging after dispose and reconnect', () => {
+    const { store, sent } = storeWithSentLog();
+    store.startHistory();
+    store.apply(
+      responseBatch(1, {
+        id: sent[0]?.id,
+        success: true,
+        data: { messages: [wireMsg('h1', 'user', 'first session')] },
+      }),
+    );
+
+    store.dispose();
+    store.startHistory();
+    expect(sent).toHaveLength(2);
+    expect(sent[1]).toMatchObject({ type: 'get_messages_page', limit: 256 });
+    expect(sent[1]?.cursor).toBeUndefined();
   });
 });

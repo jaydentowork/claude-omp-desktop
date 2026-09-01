@@ -162,10 +162,12 @@ export class TranscriptStore {
   startHistory(): void {
     if (this.history.phase !== 'initial' || this.pageId !== null) return;
     this.requestPage(null);
+    this.notify();
     this.initialTimeout = setTimeout(() => {
       this.initialTimeout = null;
       if (this.history.phase !== 'initial') return;
-      this.pageId = null;
+      // Hide the replay/dev skeleton, but keep the correlation id so a slow
+      // live-server response can still be merged when it eventually arrives.
       this.history = { phase: 'idle', hasMore: false };
       this.notify();
     }, INITIAL_PAGE_TIMEOUT_MS);
@@ -321,6 +323,12 @@ export class TranscriptStore {
     if (this.initialTimeout !== null) clearTimeout(this.initialTimeout);
     this.initialTimeout = null;
     this.coalescer.reset();
+    // Reset paging state so a remounted provider re-issues the initial page
+    // (spec §7.1 step 1) instead of inheriting a stale 'idle' / 'busy' phase.
+    this.history = { phase: 'initial' };
+    this.nextCursor = null;
+    this.pageId = null;
+    this.retryOnIdle = false;
   }
 }
 

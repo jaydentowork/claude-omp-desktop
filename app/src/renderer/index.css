@@ -402,7 +402,8 @@ body {
 .row-assistant {
   position: relative;
 }
-.row-assistant:hover .copy-btn {
+.row-assistant:hover .copy-btn,
+.row-assistant .copy-btn:focus-visible {
   opacity: 1;
 }
 .user-bubble {

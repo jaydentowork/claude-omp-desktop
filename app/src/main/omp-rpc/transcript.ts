@@ -242,15 +242,8 @@ export class TranscriptModel {
   /** Plain text of one row, for the per-message copy button (spec §6.2). */
   copyText(id: string): string | null {
     const m = this.messages.find((row) => row.id === id);
-    if (m === undefined) return null;
-    switch (m.row) {
-      case 'text':
-      case 'notice':
-      case 'run_summary':
-        return m.text;
-      case 'tool':
-        return m.result !== null ? `${m.name} ${m.summary}\n${m.result}` : `${m.name} ${m.summary}`;
-    }
+    if (m === undefined || m.row !== 'text') return null;
+    return m.text;
   }
 
   /** Apply one decoded event. Returns whether anything changed. */
