@@ -191,18 +191,59 @@ export class TranscriptModel {
     }
   }
 
+  /**
+   * Merge one history page into the row list (spec §7). Both the page and
+   * the loaded rows are ordered subsequences of the same authoritative
+   * transcript, so a two-pointer merge suffices: a page row we already hold
+   * (overlap with live-streamed rows or a stale_cursor re-fetch) syncs the
+   * existing pointer past it; an unseen row is emitted in page order. For a
+   * normal all-older page this degenerates to a prepend. Cold path (once
+   * per page, never per token).
+   */
+  mergeHistory(rows: readonly ChatMessage[]): number {
+    const indexById = new Map(this.messages.map((m, i) => [m.id, i]));
+    const merged: ChatMessage[] = [];
+    let existingPos = 0;
+    let added = 0;
+    for (const row of rows) {
+      const known = indexById.get(row.id);
+      if (known !== undefined) {
+        // Copy existing rows up to and including the overlap. `known` is
+        // always in range — we built indexById from this.messages — and the
+        // while guard keeps existingPos ≤ known, so the access is safe.
+        while (existingPos <= known) {
+          const existing = this.messages[existingPos];
+          if (existing === undefined) break;
+          merged.push(existing);
+          existingPos += 1;
+        }
+      } else {
+        merged.push(row);
+        added += 1;
+      }
+    }
+    if (added === 0) return 0;
+    while (existingPos < this.messages.length) {
+      const tail = this.messages[existingPos];
+      if (tail === undefined) break;
+      merged.push(tail);
+      existingPos += 1;
+    }
+    this.messages = merged;
+    // Re-locate the cached streaming index — inserts above it shifted it.
+    if (this.streamingIdx !== null) {
+      const ix = this.messages.findIndex((m) => m.row === 'text' && m.streaming);
+      this.streamingIdx = ix >= 0 ? ix : null;
+    }
+    this.revision += 1;
+    return added;
+  }
+
   /** Plain text of one row, for the per-message copy button (spec §6.2). */
   copyText(id: string): string | null {
     const m = this.messages.find((row) => row.id === id);
-    if (m === undefined) return null;
-    switch (m.row) {
-      case 'text':
-      case 'notice':
-      case 'run_summary':
-        return m.text;
-      case 'tool':
-        return m.result !== null ? `${m.name} ${m.summary}\n${m.result}` : `${m.name} ${m.summary}`;
-    }
+    if (m === undefined || m.row !== 'text') return null;
+    return m.text;
   }
 
   /** Apply one decoded event. Returns whether anything changed. */
@@ -418,6 +459,34 @@ export function toolSummary(name: string, args: unknown): string {
   const firstLine = (summary ?? '').split('\n')[0]?.trim() ?? '';
   const chars = Array.from(firstLine);
   return chars.length > 72 ? `${chars.slice(0, 71).join('')}…` : firstLine;
+}
+
+/**
+ * Decode one page of `get_messages_page` history into settled rows
+ * (spec §7). Only user/assistant text survives: toolResult and custom
+ * entries have no `tool_execution_*` correlation in history, so rendering
+ * them as pills would need a second decode path the live stream never
+ * exercises.
+ * ponytail: history tool calls render as nothing; add a history→tool-row
+ * mapping if reading old tool output in scroll-back becomes a real ask.
+ *
+ * `pageKey` namespaces fallback ids so id-less messages from different
+ * pages never collide (the live decoder's `anon:<role>` fallback would).
+ */
+export function historyRows(messages: unknown, pageKey: string): ChatMessage[] {
+  if (!Array.isArray(messages)) return [];
+  const out: ChatMessage[] = [];
+  messages.forEach((m, i) => {
+    const role = messageRole(m);
+    if (role === 'custom') return;
+    const text = contentText(m);
+    if (text.trim().length === 0) return;
+    const id = typeof (m as Json | null)?.id === 'string'
+      ? ((m as Json).id as string)
+      : `hist:${pageKey}:${i}`;
+    out.push({ row: 'text', id, role, text, streaming: false, rev: 0 });
+  });
+  return out;
 }
 
 /**

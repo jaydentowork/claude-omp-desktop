@@ -9,9 +9,16 @@
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Streamdown } from 'streamdown';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { code } from '@streamdown/code';
+import { createCodePlugin } from '@streamdown/code';
 import { useOmpStore, useOmpStream } from './omp-provider';
 import type { ChatMessage } from '../main/omp-rpc';
+
+// Shiki theme: `github-light` is the closest available stand-in for the
+// scraped web code-block palette (no Anthropic brand theme ships with shiki).
+// ponytail: revisit when assets/fixtures/scraped populates a code-block sample
+// (#26 shiki-palette item); `github-light` matches the translucent card bg
+// and monochrome body type, so the visual delta is mostly token colors.
+const code = createCodePlugin({ themes: ['github-light', 'github-dark'] });
 
 interface Props {
   /** Reserved slot above the list (header); 44 px per spec §1. */
@@ -32,6 +39,7 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
   const stream = useOmpStream();
   const messages = rows ?? stream.messages;
   const streaming = rows !== undefined ? rowsStreaming ?? false : stream.streaming;
+  const history = stream.history;
   const store = useOmpStore();
   const parentRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(true);
@@ -51,11 +59,16 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
   useEffect(() => {
     const el = parentRef.current;
     if (el === null) return;
-    const update = () => setAtEnd(virtualizer.isAtEnd());
+    const update = () => {
+      setAtEnd(virtualizer.isAtEnd());
+      // Spec §7.1 step 4: page in older history when the user scrolls within
+      // 200 px of the top. Cold path — loadEarlier no-ops unless idle+hasMore.
+      if (el.scrollTop < 200) store.loadEarlier();
+    };
     update();
     el.addEventListener('scroll', update, { passive: true });
     return () => el.removeEventListener('scroll', update);
-  }, [virtualizer]);
+  }, [virtualizer, store]);
 
   const scrollToEnd = useCallback(() => {
     if (messages.length === 0) return;
@@ -70,10 +83,36 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
     [store, onToggleTool],
   );
 
+  const copyRow = useCallback(
+    (id: string) => {
+      // Spec §6.2: copy from the model, not the DOM.
+      const text = store.model.copyText(id);
+      if (text !== null) void navigator.clipboard.writeText(text);
+    },
+    [store],
+  );
+
+  const loadEarlier = useCallback(() => store.loadEarlier(), [store]);
+
   return (
     <div className="transcript-pane">
       {header !== undefined && <div className="pane-header">{header}</div>}
       <div ref={parentRef} className="transcript-scroll" data-testid="transcript-scroll">
+        {history.phase === 'initial' && (
+          <div className="history-skeleton" role="status">
+            Loading transcript…
+          </div>
+        )}
+        {history.phase === 'idle' && history.hasMore && messages.length > 0 && (
+          <button type="button" className="history-pill" onClick={loadEarlier}>
+            Load earlier messages…
+          </button>
+        )}
+        {history.phase === 'busy' && (
+          <div className="history-busy" role="status">
+            Transcript locked while streaming — try again when the turn ends
+          </div>
+        )}
         <div
           className="transcript-vlist"
           style={{ height: `${virtualizer.getTotalSize()}px` }}
@@ -95,7 +134,7 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
                   transform: `translateY(${vi.start}px)`,
                 }}
               >
-                <MessageRow message={msg} onToggleTool={toggleTool} />
+                <MessageRow message={msg} onToggleTool={toggleTool} onCopy={copyRow} />
               </div>
             );
           })}
@@ -122,12 +161,13 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
 interface RowProps {
   message: ChatMessage;
   onToggleTool: (toolCallId: string) => void;
+  onCopy: (id: string) => void;
 }
 
-const MessageRow = memo(function MessageRow({ message, onToggleTool }: RowProps) {
+const MessageRow = memo(function MessageRow({ message, onToggleTool, onCopy }: RowProps) {
   switch (message.row) {
     case 'text':
-      return <TextRow message={message} />;
+      return <TextRow message={message} onCopy={onCopy} />;
     case 'tool':
       return <ToolRow message={message} onToggle={onToggleTool} />;
     case 'notice':
@@ -143,15 +183,41 @@ const MessageRow = memo(function MessageRow({ message, onToggleTool }: RowProps)
   return (
     prev.message.id === next.message.id &&
     prev.message.rev === next.message.rev &&
-    prev.onToggleTool === next.onToggleTool
+    prev.onToggleTool === next.onToggleTool &&
+    prev.onCopy === next.onCopy
   );
 });
 
-function TextRow({ message }: { message: Extract<ChatMessage, { row: 'text' }> }) {
+/** Spec §6.2 copy button: hover-visible on assistant rows (via CSS), always
+ * visible on user rows. */
+function CopyButton({ id, onCopy }: { id: string; onCopy: (id: string) => void }) {
+  return (
+    <button
+      type="button"
+      className="copy-btn"
+      aria-label="Copy message"
+      title="Copy message"
+      onClick={() => onCopy(id)}
+    >
+      ⧉
+    </button>
+  );
+}
+
+function TextRow({
+  message,
+  onCopy,
+}: {
+  message: Extract<ChatMessage, { row: 'text' }>;
+  onCopy: (id: string) => void;
+}) {
   if (message.role === 'user') {
     return (
       <div className="row row-user">
-        <div className="user-bubble">{message.text}</div>
+        <div className="user-bubble">
+          {message.text}
+          <CopyButton id={message.id} onCopy={onCopy} />
+        </div>
       </div>
     );
   }
@@ -163,6 +229,7 @@ function TextRow({ message }: { message: Extract<ChatMessage, { row: 'text' }> }
   }
   return (
     <div className="row row-assistant">
+      {!message.streaming && <CopyButton id={message.id} onCopy={onCopy} />}
       <Streamdown
         isAnimating={message.streaming}
         plugins={message.streaming ? undefined : { code }}

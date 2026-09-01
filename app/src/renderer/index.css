@@ -13,6 +13,7 @@
   --border: #e8e8e8;                /* [semantic.colors] border */
   --border-subtle: rgba(11, 11, 11, 0.1); /* scrape: translucent card/inline-code border */
   --inline-code-bg: rgba(11, 11, 11, 0.05); /* scrape: inline-code bg */
+  --inline-code-fg: #8e2626; /* scrape: rgb(142,38,38) — web uses red for inline code */
   --card-bg: #f2f2f1;               /* [app.surfaces] card */
   --sans: anthropic-sans, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: anthropic-mono, ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -339,6 +340,82 @@ body {
   padding: 16px 0;
 }
 
+/* --- history paging (spec §7) -------------------------------------------- */
+
+/* §7.1 step 2: skeleton row, first load only. */
+.history-skeleton {
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* §7.2: manual "Load earlier messages…" pill above the oldest loaded row. */
+.history-pill {
+  display: block;
+  margin: 8px auto;
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border: none;
+  border-radius: 12px;
+  padding: 3px 12px;
+  cursor: pointer;
+}
+
+/* §7.3: quiet lock message replacing the pill during session_busy. */
+.history-busy {
+  margin: 8px 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+/* --- per-message copy button (spec §6.2) --------------------------------- */
+
+/* Top-right of the row; assistant rows reveal on hover (opacity 0 → 1 over
+   100 ms), user bubbles always show it. */
+.copy-btn {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 100ms;
+}
+.copy-btn:hover {
+  color: var(--text-secondary);
+  background: var(--card-bg);
+}
+.row-assistant {
+  position: relative;
+}
+.row-assistant:hover .copy-btn,
+.row-assistant .copy-btn:focus-visible {
+  opacity: 1;
+}
+.user-bubble {
+  position: relative;
+}
+.user-bubble .copy-btn {
+  opacity: 1;
+  position: static;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
 .scroll-to-bottom {
   position: sticky;
   left: 100%;
@@ -403,6 +480,7 @@ body {
 .row-assistant code {
   font-family: var(--mono);
   font-size: 13px;
+  color: var(--inline-code-fg);
   background: var(--inline-code-bg);
   border: 1px solid var(--border-subtle);
   border-radius: 5px;
@@ -418,6 +496,7 @@ body {
   overflow-x: auto;
 }
 .row-assistant pre code {
+  color: inherit; /* red is inline-code only; block code takes shiki colors */
   background: none;
   border: none;
   padding: 0;
