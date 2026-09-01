@@ -127,7 +127,7 @@ export class TranscriptStore {
 
   /** Re-request authoritative state after a seq gap and clear the flag. */
   resync = (): void => {
-    this.send?.({ op: 'get_state' });
+    this.send?.({ type: 'get_state' });
     if (!this.seqState.gapDetected) return;
     this.seqState = { ...this.seqState, gapDetected: false };
     this.notify();

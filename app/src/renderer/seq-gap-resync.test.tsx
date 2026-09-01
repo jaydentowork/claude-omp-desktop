@@ -51,7 +51,7 @@ describe('seq-gap detection', () => {
 
     store.resync();
     expect(send).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith({ op: 'get_state' });
+    expect(send).toHaveBeenCalledWith({ type: 'get_state' });
     expect(store.getState().gapDetected).toBe(false);
   });
 });
@@ -82,6 +82,6 @@ describe('<ResyncBanner>', () => {
       'stream gap detected, re-reading state',
     );
     expect(send).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith({ op: 'get_state' });
+    expect(send).toHaveBeenCalledWith({ type: 'get_state' });
   });
 });
