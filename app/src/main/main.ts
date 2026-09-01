@@ -104,11 +104,15 @@ const createWindow = () => {
     // Upstream direction of the same channel: preload's `omp.send(command)`
     // posts the command envelope back on this port; forward it to the child's
     // stdin as one NDJSON line (issue #23 — composer submit path).
+    // `start()` is required on the main-side port too — MessagePortMain
+    // queues 'message' events until then, mirroring the renderer-side
+    // `preload.ts:35` call.
     channel.port1.on('message', (e) => {
       const command = e.data;
       if (command === null || typeof command !== 'object') return;
       pump?.send(JSON.stringify(command));
     });
+    channel.port1.start();
     mainWindow.webContents.postMessage('omp-port', null, [channel.port2]);
     perfReplay?.start();
   });
