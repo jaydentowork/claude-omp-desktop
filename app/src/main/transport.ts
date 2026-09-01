@@ -42,6 +42,9 @@ export class Transport {
   private flushedBatches = 0;
   private flushedFrames = 0;
   private droppedFrames = 0;
+  /** Upstream path: renderer commands arriving on the same port. The pump
+   * owner assigns this once and it survives port rebinds. */
+  onCommand: ((command: unknown) => void) | null = null;
 
   /**
    * Hook a renderer port into the pump. Idempotent: a second call drops the
@@ -52,6 +55,10 @@ export class Transport {
     port.on('close', () => {
       if (this.port === port) this.port = null;
     });
+    // Renderer → main commands ride the same channel in the other direction
+    // (preload's `send` posts on its end of the pair).
+    port.on('message', (e) => this.onCommand?.(e.data));
+    port.start?.();
     // Drain anything queued while we were unattached so we never lose frames
     // that arrived before the renderer was ready.
     if (this.pending.length > 0) this.scheduleFlush(0);

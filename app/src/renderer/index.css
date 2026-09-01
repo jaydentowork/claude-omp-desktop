@@ -517,3 +517,264 @@ body {
   color: var(--text-secondary);
   font-size: 12px;
 }
+
+/* --- subagent panel (docs/subagent-panel.md §8 geometry) ------------------ */
+
+.subagent-panel {
+  padding: 8px 14px;
+}
+
+.tasks-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px 16px;
+}
+
+/* Card surface: 254 px wide inside the 283 px panel, 8 px radius, 11 px
+   padding, 4 px inter-card gap, flat (no shadow). */
+.subagent-card {
+  width: 254px;
+  box-sizing: border-box;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 11px;
+  margin-bottom: 4px;
+}
+
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  /* Card title in text_muted — the visual hierarchy's "title" is the agent
+     name (spec §2). Status text also muted until a failure screenshot
+     yields a measured token. */
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.card-task {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  margin-top: 4px;
+}
+
+.card-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--text-link);
+  cursor: pointer;
+}
+
+.finished-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0 4px;
+}
+
+.finished-toggle,
+.finished-clear {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.finished-clear:hover,
+.finished-toggle:hover {
+  color: var(--text-secondary);
+}
+
+/* --- subagent transcript dialog (spec §4) --------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 11, 11, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.subagent-dialog {
+  width: min(720px, calc(100vw - 64px));
+  height: min(560px, calc(100vh - 64px));
+  background: var(--color-background);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialog-header {
+  height: 44px;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 16px;
+  font-weight: 500;
+}
+
+.dialog-error {
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* --- status-bar switcher cluster (docs/model-thinking-switcher.md) -------- */
+
+.statusbar {
+  justify-content: space-between;
+}
+
+.statusbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.switcher-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.switcher-trigger {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.switcher-dead {
+  opacity: 0.45;
+}
+
+.switcher-notice {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+/* Popovers anchor to the cluster and drop upward (the bar is at the bottom
+   of the window — spec §0). White surface, 10 px radius, border, shadow. */
+.picker-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  background: var(--color-background);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(11, 11, 11, 0.12);
+  padding: 6px;
+  min-width: 220px;
+  z-index: 10;
+}
+
+.picker-header {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.picker-header strong {
+  color: var(--text-primary);
+}
+
+.picker-help {
+  margin-left: auto;
+  cursor: help;
+}
+
+/* ~10 visible rows, then scroll (spec §2.2). Row height 24 px per scrape. */
+.picker-rows {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  height: 24px;
+  padding: 2.5px 8px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.picker-row[data-highlighted='true'] {
+  background: var(--card-bg);
+}
+
+.picker-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-hotkey {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.picker-check {
+  color: #d97757; /* accent */
+}
+
+.thinking-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+.thinking-slider[data-busy='true'] {
+  opacity: 0.6;
+}
+
+.thinking-end {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.thinking-slider input[type='range'] {
+  flex: 1;
+  accent-color: #d97757;
+}

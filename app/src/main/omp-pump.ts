@@ -17,7 +17,7 @@ import {
   spawnSync,
   type ChildProcess,
 } from 'node:child_process';
-import { FrameDecoder, type Frame } from './omp-rpc';
+import { FrameDecoder, CHILD_EXIT_NOTICE, type Frame } from './omp-rpc';
 import type { Transport, OutboundFrame } from './transport';
 
 /** Tail of stderr retained for the synthesized error notice. */
@@ -162,7 +162,7 @@ export class OmpPump {
       kind: 'notice',
       payload: {
         level: 'error',
-        message: `The omp process for this session exited unexpectedly${detail ? `: ${detail}` : '.'}`,
+        message: `${CHILD_EXIT_NOTICE}${detail ? `: ${detail}` : '.'}`,
       },
     });
     if (wasStreaming) {

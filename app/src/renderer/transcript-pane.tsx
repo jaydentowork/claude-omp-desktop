@@ -18,10 +18,20 @@ interface Props {
   header?: ReactNode;
   /** Reserved slot below the list (composer + git strip); 88 px per spec §1. */
   footer?: ReactNode;
+  /** Override the backing rows: the subagent transcript dialog reuses this
+   * renderer with its own message-fetch loop (docs/subagent-panel.md §4).
+   * Absent → the session stream from `OmpProvider`. */
+  rows?: readonly ChatMessage[];
+  /** Streaming flag paired with `rows`; ignored when `rows` is absent. */
+  rowsStreaming?: boolean;
+  /** Tool-collapse toggle paired with `rows`; defaults to the session store. */
+  onToggleTool?: (toolCallId: string) => void;
 }
 
-export function TranscriptPane({ header, footer }: Props) {
-  const { messages, streaming } = useOmpStream();
+export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTool }: Props) {
+  const stream = useOmpStream();
+  const messages = rows ?? stream.messages;
+  const streaming = rows !== undefined ? rowsStreaming ?? false : stream.streaming;
   const store = useOmpStore();
   const parentRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(true);
@@ -53,8 +63,11 @@ export function TranscriptPane({ header, footer }: Props) {
   }, [messages.length, virtualizer]);
 
   const toggleTool = useCallback(
-    (toolCallId: string) => store.toggleTool(toolCallId),
-    [store],
+    (toolCallId: string) => {
+      if (onToggleTool !== undefined) onToggleTool(toolCallId);
+      else store.toggleTool(toolCallId);
+    },
+    [store, onToggleTool],
   );
 
   return (
