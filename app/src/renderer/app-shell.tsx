@@ -11,6 +11,7 @@
 
 import { useState } from 'react';
 import { TranscriptPane } from './transcript-pane';
+import { Composer } from './composer';
 import { useOmpStream } from './omp-provider';
 
 export function AppShell() {
@@ -130,11 +131,17 @@ function TranscriptHeader() {
   );
 }
 
-/** 88 px composer + git-strip slot. Composer is its own slice; the git strip
- * is deferred, rendered as a dimmed card so its space stays visible
- * (window-shell decision 6). */
+/** 88 px composer + git-strip slot (window-shell decision 6): 44 px composer
+ * (issue #23), 10 px gap, 34 px dimmed git-strip card below it — deferred,
+ * not MVP, but its space stays visible. Order matches the measured screenshot
+ * (composer y=713..757, strip between it and the status bar). */
 function PaneFooter() {
-  return <div className="git-strip-placeholder">git strip — deferred, not MVP</div>;
+  return (
+    <>
+      <Composer />
+      <div className="git-strip-placeholder">git strip — deferred, not MVP</div>
+    </>
+  );
 }
 
 /** 33 px status bar (window-shell decision 5). Account row is local config;

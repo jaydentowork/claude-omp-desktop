@@ -204,10 +204,12 @@ body {
 }
 
 .git-strip-placeholder {
-  margin: 8px 16px;
+  height: 34px;
+  box-sizing: border-box;
   padding: 8px 12px;
   color: var(--text-muted);
   font-size: 12px;
+  line-height: 18px;
   background: var(--card-bg);
   border-radius: 8px;
   opacity: 0.6;
@@ -244,11 +246,67 @@ body {
   font-weight: 500;
 }
 
-/* Composer + git-strip slot: 88 px reserved below the list (spec §1).
-   The composer itself ships with its own slice. */
+/* Composer + git-strip slot: 88 px reserved below the list (spec §1) —
+   44 px composer + 10 px gap + 34 px git strip (window-shell decision 6).
+   The 10 px gap keeps the composer's edge clear of the strip's separator
+   on resize. Horizontal inset matches the list's 36 px. */
 .pane-footer {
   height: 88px;
   flex: none;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 36px;
+}
+
+/* --- composer (issue #23, window-shell decision 6) ----------------------- */
+
+.composer {
+  height: 44px; /* [app.composer] height */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fefefe; /* [app.surfaces] composer */
+  border: 1px solid #e1e1e0; /* [app.composer] border */
+  border-radius: 12px; /* [app.composer] radius */
+  padding: 0 6px 0 12px; /* [app.composer] padding_x */
+}
+.composer:focus-within {
+  border-color: var(--text-muted);
+}
+
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+.composer-input::placeholder {
+  color: var(--text-muted);
+}
+
+.composer-submit {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  padding: 0;
+  font: inherit;
+  color: #ffffff; /* [semantic.colors] primary_foreground */
+  background: #d97757; /* [semantic.colors] primary */
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.composer-submit:disabled {
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: default;
 }
 
 .transcript-scroll {
