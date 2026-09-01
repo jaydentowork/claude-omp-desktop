@@ -5,3 +5,7 @@
 .claude/settings.local.json
 /.scratch
 /Claude Code Images
+.orca
+/.claude
+/.firecrawl
+.mcp.json
