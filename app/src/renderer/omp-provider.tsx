@@ -252,6 +252,12 @@ export class TranscriptStore {
       gapDetected,
     };
     for (const frame of b.frames) {
+      // Raw-frame fan-out runs first: external listeners (RpcClient + stores)
+      // see every frame, including paging responses, before any internal
+      // bookkeeping that may `continue` out of this iteration.
+      if (this.frameListeners.size > 0) {
+        for (const l of this.frameListeners) l(frame);
+      }
       if (frame.kind === 'response') {
         const resp = frame.payload as { id?: string; success?: boolean } | null;
         if (resp && typeof resp.success === 'boolean') {
@@ -261,9 +267,6 @@ export class TranscriptStore {
       }
       const event = decodeEventValue(frame.payload);
       for (const e of this.coalescer.feed(event)) this.model.apply(e);
-      if (this.frameListeners.size > 0) {
-        for (const l of this.frameListeners) l(frame);
-      }
       if (
         (event.event === 'agent_end' && event.isTerminal) ||
         frame.kind === 'auto_compaction_end'

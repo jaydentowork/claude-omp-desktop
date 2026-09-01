@@ -35,6 +35,7 @@ export interface SwitcherState {
 }
 
 const NOTICE_MS = 6000;
+const THINKING_CONFIRM_TIMEOUT_MS = 10_000;
 
 function levelOf(v: unknown): ThinkingLevel | null {
   return typeof v === 'string' && (THINKING_LEVELS as readonly string[]).includes(v)
@@ -47,6 +48,13 @@ function modelName(m: unknown): string | null {
   return typeof name === 'string' && name.length > 0 ? name : null;
 }
 
+interface ThinkingConfirmation {
+  responseSucceeded: boolean;
+  eventSeen: boolean;
+  resolve: (accepted: boolean) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 export class SwitcherStore {
   private state: SwitcherState = {
     modelLabel: '',
@@ -56,8 +64,12 @@ export class SwitcherStore {
     catalog: [],
   };
   private listeners = new Set<() => void>();
-  /** Label to revert to if the in-flight `set_model` fails (spec §2.3). */
+  /** Label to restore if latest optimistic model request fails. */
   private pendingModelRevert: string | null = null;
+  /** Generations discard responses superseded by newer commands/events. */
+  private modelRequest = 0;
+  private stateRequest = 0;
+  private thinkingConfirmation: ThinkingConfirmation | null = null;
   private noticeTimer: ReturnType<typeof setTimeout> | null = null;
   private rpc: RpcClient | null = null;
 
@@ -65,12 +77,18 @@ export class SwitcherStore {
     this.rpc = rpc;
     const offFrame = store.onFrame(this.onFrame);
     const offReady = rpc.onReady(() => {
+      // A new `ready` frame means a fresh child — flip the alive latch back.
+      // The dead-child path sets `alive: false` on CHILD_EXIT_NOTICE; nothing
+      // else resets it, so without this the cluster stays dimmed after a
+      // crash even though the new child is forwarding config_update frames.
+      this.set({ alive: true });
       void this.refreshState();
       void this.refreshCatalog();
     });
     return () => {
       offFrame();
       offReady();
+      this.finishThinkingConfirmation(false);
       if (this.noticeTimer !== null) clearTimeout(this.noticeTimer);
     };
   }
@@ -99,12 +117,16 @@ export class SwitcherStore {
   /** Re-read authoritative state; the reconciliation anchor (rpc-events §4.2). */
   async refreshState(): Promise<void> {
     if (this.rpc === null) return;
+    const request = ++this.stateRequest;
     try {
       const r = await this.rpc.request({ type: 'get_state' });
-      if (!r.success) return;
+      // Multiple signal-only model_changed events can overlap. Only newest
+      // request may paint; an older response arriving last is stale.
+      if (request !== this.stateRequest || !r.success) return;
       const data = r.data as { model?: unknown; thinkingLevel?: unknown } | undefined;
       const name = modelName(data?.model);
-      // A get_state reply is authoritative: it clears any optimistic paint.
+      // A get_state reply is authoritative: it supersedes optimistic requests.
+      this.modelRequest += 1;
       this.pendingModelRevert = null;
       this.set({
         modelLabel: name ?? this.state.modelLabel,
@@ -146,19 +168,21 @@ export class SwitcherStore {
   /** Commit a model pick: optimistic paint, then reconcile (spec §2.3). */
   async setModel(model: CatalogModel): Promise<void> {
     if (this.rpc === null || !this.state.alive) return;
+    const request = ++this.modelRequest;
     // Keep the first revert target if commits overlap — it is the last
     // server-confirmed label.
     if (this.pendingModelRevert === null) this.pendingModelRevert = this.state.modelLabel;
     this.set({ modelLabel: model.name });
     try {
       const r = await this.rpc.request({ type: 'set_model', provider: model.provider, modelId: model.id });
+      if (request !== this.modelRequest) return;
       if (r.success) {
         this.pendingModelRevert = null;
         return;
       }
       this.revertModel(r.error ?? 'set_model failed');
     } catch (e) {
-      this.revertModel((e as Error).message);
+      if (request === this.modelRequest) this.revertModel((e as Error).message);
     }
   }
 
@@ -171,21 +195,52 @@ export class SwitcherStore {
   }
 
   /** Commit a thinking level. No optimistic paint — the label follows
-   * `thinking_level_changed` (spec §3.2). Resolves true when the level was
-   * accepted so the picker can close. */
+   * `thinking_level_changed` (spec §3.2). Resolves only after both command
+   * acceptance and the authoritative event, so the picker stays busy/open. */
   async setThinkingLevel(level: ThinkingLevel): Promise<boolean> {
     if (this.rpc === null || !this.state.alive) return false;
-    try {
-      const r = await this.rpc.request({ type: 'set_thinking_level', level });
-      if (!r.success) {
-        this.showNotice(r.error ?? 'set_thinking_level failed');
-        return false;
-      }
-      return true;
-    } catch (e) {
-      this.showNotice((e as Error).message);
-      return false;
-    }
+    this.finishThinkingConfirmation(false);
+
+    return new Promise<boolean>((resolve) => {
+      const pending: ThinkingConfirmation = {
+        responseSucceeded: false,
+        eventSeen: false,
+        resolve,
+        timer: setTimeout(() => {
+          if (this.thinkingConfirmation === pending) {
+            this.showNotice('Thinking level update timed out');
+            this.finishThinkingConfirmation(false);
+          }
+        }, THINKING_CONFIRM_TIMEOUT_MS),
+      };
+      this.thinkingConfirmation = pending;
+
+      void this.rpc?.request({ type: 'set_thinking_level', level }).then(
+        (r) => {
+          if (this.thinkingConfirmation !== pending) return;
+          if (!r.success) {
+            this.showNotice(r.error ?? 'set_thinking_level failed');
+            this.finishThinkingConfirmation(false);
+            return;
+          }
+          pending.responseSucceeded = true;
+          if (pending.eventSeen) this.finishThinkingConfirmation(true);
+        },
+        (e: unknown) => {
+          if (this.thinkingConfirmation !== pending) return;
+          this.showNotice((e as Error).message);
+          this.finishThinkingConfirmation(false);
+        },
+      );
+    });
+  }
+
+  private finishThinkingConfirmation(accepted: boolean): void {
+    const pending = this.thinkingConfirmation;
+    if (pending === null) return;
+    this.thinkingConfirmation = null;
+    clearTimeout(pending.timer);
+    pending.resolve(accepted);
   }
 
   private onFrame = (frame: StreamFrame): void => {
@@ -194,6 +249,7 @@ export class SwitcherStore {
         // The event wins over any optimistic paint (spec §2.3 step 5).
         const p = frame.payload as { model?: unknown; thinkingLevel?: unknown };
         const name = modelName(p.model);
+        this.modelRequest += 1;
         this.pendingModelRevert = null;
         this.set({
           modelLabel: name ?? this.state.modelLabel,
@@ -203,13 +259,24 @@ export class SwitcherStore {
       }
       case 'model_changed':
         // Signal only — no payload; truth needs a get_state round-trip.
+        // The event supersedes any optimistic selection; a late failure from
+        // that set_model must not restore its stale revert target.
+        this.modelRequest += 1;
+        this.pendingModelRevert = null;
         void this.refreshState();
         break;
       case 'thinking_level_changed': {
         // Label rule: resolved > configured > thinkingLevel (spec §3.2).
         const p = frame.payload as { thinkingLevel?: unknown; configured?: unknown; resolved?: unknown };
         const level = levelOf(p.resolved) ?? levelOf(p.configured) ?? levelOf(p.thinkingLevel);
-        if (level !== null) this.set({ thinkingLevel: level });
+        if (level !== null) {
+          this.set({ thinkingLevel: level });
+          const pending = this.thinkingConfirmation;
+          if (pending !== null) {
+            pending.eventSeen = true;
+            if (pending.responseSucceeded) this.finishThinkingConfirmation(true);
+          }
+        }
         break;
       }
       case 'notice': {
@@ -217,6 +284,7 @@ export class SwitcherStore {
         // (spec §2.4: RPC child dead → labels dim, clicks no-op).
         const p = frame.payload as { message?: unknown };
         if (typeof p.message === 'string' && p.message.startsWith(CHILD_EXIT_NOTICE)) {
+          this.finishThinkingConfirmation(false);
           this.set({ alive: false });
         }
         break;

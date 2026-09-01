@@ -57,6 +57,12 @@ function normalizeStatus(s: string): SubagentStatus {
   return 'running';
 }
 
+/** Spec §3.2 (rpc-events.md): non-detached spawns do not belong in the
+ * panel. Missing `detached` stays compatible with older builds. */
+function isDetached(payload: unknown): boolean {
+  return (payload as { detached?: unknown } | undefined)?.detached !== false;
+}
+
 export class SubagentStore {
   private readonly rows = new Map<string, PanelRow>();
   private groups: PanelGroups = { running: [], finished: [] };
@@ -163,10 +169,13 @@ export class SubagentStore {
   private onFrame = (frame: StreamFrame): void => {
     if (frame.kind === 'subagent_lifecycle') {
       const p = (frame.payload as { payload?: unknown })?.payload;
-      if (p !== undefined) this.applyLifecycle(p);
+      // Spec §3.2 (rpc-events.md): only detached spawns belong in a
+      // background-tasks HUD. Non-detached frames are tool-call-spawned
+      // transients that would otherwise flood the panel.
+      if (p !== undefined && isDetached(p)) this.applyLifecycle(p);
     } else if (frame.kind === 'subagent_progress') {
       const p = (frame.payload as { payload?: unknown })?.payload;
-      if (p !== undefined) this.applyProgress(p);
+      if (p !== undefined && isDetached(p)) this.applyProgress(p);
     }
   };
 
@@ -197,7 +206,8 @@ export class SubagentStore {
       return;
     }
     const wasTerminal = TERMINAL.has(existing.status);
-    existing.status = status;
+    // Terminal is sticky: a stale `started` frame must not resurrect a row.
+    if (!wasTerminal) existing.status = status;
     existing.sessionFile = p.sessionFile ?? existing.sessionFile;
     if (p.description !== undefined) existing.description = p.description;
     existing.rev += 1;
@@ -206,9 +216,8 @@ export class SubagentStore {
       // time of the terminal frame (spec §3).
       existing.terminalMs = this.now();
       this.rebuildGroups();
-    } else {
-      this.notifyRow(p.id);
     }
+    this.notifyRow(p.id);
   }
 
   private applyProgress(payload: unknown): void {
@@ -244,9 +253,8 @@ export class SubagentStore {
     if (!TERMINAL.has(oldStatus) && TERMINAL.has(existing.status)) {
       existing.terminalMs = this.now();
       this.rebuildGroups();
-    } else {
-      this.notifyRow(existing.id);
     }
+    this.notifyRow(existing.id);
   }
 
   private applySnapshot(snapshot: unknown): void {
@@ -291,9 +299,6 @@ export class SubagentStore {
     };
     this.syncTicker();
     this.notifyPanel();
-    // Membership shifts also change per-card state (status text moved from
-    // elapsed to Completed etc.) — nudge every card once.
-    for (const id of this.rowListeners.keys()) this.notifyRow(id);
   }
 
   private notifyPanel(): void {

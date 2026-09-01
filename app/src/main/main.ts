@@ -71,8 +71,10 @@ const createWindow = () => {
     let i = 0;
     replayTimer = setInterval(() => {
       if (i >= lines.length) {
-        clearInterval(replayTimer!);
-        replayTimer = null;
+        if (replayTimer !== null) {
+          clearInterval(replayTimer);
+          replayTimer = null;
+        }
         return;
       }
       const frame = decoder.feedLine(lines[i++]);
