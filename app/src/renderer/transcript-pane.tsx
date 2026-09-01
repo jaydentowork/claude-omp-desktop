@@ -38,7 +38,8 @@ interface Props {
 export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTool }: Props) {
   const stream = useOmpStream();
   const messages = rows ?? stream.messages;
-  const streaming = rows !== undefined ? rowsStreaming ?? false : stream.streaming;
+  const customRows = rows !== undefined;
+  const streaming = customRows ? rowsStreaming ?? false : stream.streaming;
   const history = stream.history;
   const store = useOmpStore();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -58,7 +59,7 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
 
   useEffect(() => {
     const el = parentRef.current;
-    if (el === null) return;
+    if (el === null || customRows) return;
     const update = () => {
       setAtEnd(virtualizer.isAtEnd());
       // Spec §7.1 step 4: page in older history when the user scrolls within
@@ -68,7 +69,7 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
     update();
     el.addEventListener('scroll', update, { passive: true });
     return () => el.removeEventListener('scroll', update);
-  }, [virtualizer, store]);
+  }, [virtualizer, store, customRows]);
 
   const scrollToEnd = useCallback(() => {
     if (messages.length === 0) return;
@@ -98,17 +99,17 @@ export function TranscriptPane({ header, footer, rows, rowsStreaming, onToggleTo
     <div className="transcript-pane">
       {header !== undefined && <div className="pane-header">{header}</div>}
       <div ref={parentRef} className="transcript-scroll" data-testid="transcript-scroll">
-        {history.phase === 'initial' && (
+        {!customRows && history.phase === 'initial' && (
           <div className="history-skeleton" role="status">
             Loading transcript…
           </div>
         )}
-        {history.phase === 'idle' && history.hasMore && messages.length > 0 && (
+        {!customRows && history.phase === 'idle' && history.hasMore && messages.length > 0 && (
           <button type="button" className="history-pill" onClick={loadEarlier}>
             Load earlier messages…
           </button>
         )}
-        {history.phase === 'busy' && (
+        {!customRows && history.phase === 'busy' && (
           <div className="history-busy" role="status">
             Transcript locked while streaming — try again when the turn ends
           </div>

@@ -106,6 +106,35 @@ describe('model path (optimistic + reconcile)', () => {
     expect(store.getState().thinkingLevel).toBe('medium');
   });
 
+  it('newest get_state response wins when model_changed requests overlap', async () => {
+    const { transcript, store, sent, respond } = wired();
+    transcript.apply(batchOf([
+      { kind: 'model_changed', payload: { type: 'model_changed' } },
+      { kind: 'model_changed', payload: { type: 'model_changed' } },
+    ]));
+    const older = cmd(sent, 'get_state');
+    const newer = cmd(sent, 'get_state', 1);
+
+    respond(newer, { success: true, data: { model: { name: 'GPT 5.6 Luna' } } });
+    respond(older, { success: true, data: { model: { name: 'stale model' } } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.getState().modelLabel).toBe('GPT 5.6 Luna');
+  });
+
+  it('stale set_model failure cannot revert a newer selection', async () => {
+    const { store, sent, respond } = wired();
+    void store.setModel(luna);
+    const older = cmd(sent, 'set_model');
+    void store.setModel(terra);
+    const newer = cmd(sent, 'set_model', 1);
+
+    respond(newer, { success: true });
+    respond(older, { success: false, error: 'stale failure' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.getState().modelLabel).toBe('GPT Terra - Sonnet');
+    expect(store.getState().notice).toBeNull();
+  });
+
   it('catalog failure surfaces the retry notice and reports false', async () => {
     const { store, sent, respond } = wired();
     const p = store.refreshCatalog();
@@ -142,7 +171,12 @@ describe('thinking path (event-driven, no optimistic paint)', () => {
     expect(store.getState().thinkingLevel).toBeNull(); // not painted by the click
 
     respond(cmd(sent, 'set_thinking_level'), { success: true });
-    await expect(p).resolves.toBe(true);
+    let resolved = false;
+    void p.then(() => {
+      resolved = true;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(resolved).toBe(false); // waits for authoritative event
     expect(store.getState().thinkingLevel).toBeNull(); // still event-driven
 
     transcript.apply(
@@ -153,6 +187,7 @@ describe('thinking path (event-driven, no optimistic paint)', () => {
         },
       ]),
     );
+    await expect(p).resolves.toBe(true);
     expect(store.getState().thinkingLevel).toBe('high');
 
     // configured/resolved override: resolved wins.

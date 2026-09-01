@@ -274,15 +274,18 @@ describe('switcher cluster UI', () => {
 
     respond(req, { success: true });
     await act(() => vi.advanceTimersByTimeAsync(0));
-    expect(screen.queryByRole('dialog')).toBeNull();
-    // Label still follows the event, not the click.
-    expect(screen.queryByText('Max')).toBeNull();
+    // Popover stays open until the authoritative event lands (spec §3.2).
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByText('Max')).toBeTruthy(); // popover header tracks the local handle
+    expect(screen.queryAllByText('Max')).toHaveLength(1); // status-bar label still shows prior
     push([
       {
         kind: 'thinking_level_changed',
         payload: { type: 'thinking_level_changed', thinkingLevel: 'max' },
       },
     ]);
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText('Max')).toBeTruthy();
   });
 });

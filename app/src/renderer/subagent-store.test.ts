@@ -126,12 +126,36 @@ describe('SubagentStore', () => {
     expect(store.getRow('ghost')?.agentName).toBe('scout');
   });
 
-  it('a stale progress frame never resurrects a terminal row', () => {
+  it('stale lifecycle and progress frames never resurrect a terminal row', () => {
     const { transcript, store } = wiredStore();
     transcript.apply(batchOf([lifecycle('a1', 'started'), lifecycle('a1', 'completed')]));
-    transcript.apply(batchOf([progress('a1', 'running')]));
+    transcript.apply(batchOf([lifecycle('a1', 'started'), progress('a1', 'running')]));
     expect(store.getRow('a1')?.status).toBe('completed');
     expect(store.getGroups().finished).toEqual(['a1']);
+  });
+
+  it('membership shifts notify the panel + moved card only, not every subscribed card', () => {
+    const { transcript, store } = wiredStore();
+    transcript.apply(batchOf([lifecycle('a1', 'started'), lifecycle('a2', 'started')]));
+    const a1 = vi.fn();
+    const a2 = vi.fn();
+    store.subscribeRow('a1', a1);
+    store.subscribeRow('a2', a2);
+    a1.mockClear();
+    a2.mockClear();
+
+    transcript.apply(batchOf([lifecycle('a1', 'completed')]));
+    // a1 just transitioned group (its card label flipped); a2 is unchanged.
+    expect(a1).toHaveBeenCalledTimes(1);
+    expect(a2).not.toHaveBeenCalled();
+  });
+
+  it('ignores non-detached spawns (only detached belong in the background-tasks HUD)', () => {
+    const { transcript, store } = wiredStore();
+    transcript.apply(batchOf([lifecycle('attached', 'started', { detached: false })]));
+    expect(store.getGroups().running).toEqual([]);
+    transcript.apply(batchOf([lifecycle('free', 'started', { detached: true })]));
+    expect(store.getGroups().running).toEqual(['free']);
   });
 
   it('elapsed ticker runs only while a card is running and bumps row revs', () => {
