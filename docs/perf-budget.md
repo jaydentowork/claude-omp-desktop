@@ -84,19 +84,26 @@ All three gaps are what the Playwright interactive check covers.
 preload→store→virtualized-pane pipeline, then **stream** `message_update`
 snapshots at 60 events/s for 45 s against that backlog.
 
-| Bar            | Threshold                                   | Catches                                      |
-|----------------|---------------------------------------------|----------------------------------------------|
-| virtualization | mounted `.row-wrap` nodes < 200 at 30k rows | dropping virtualisation (full-list render)   |
-| fps floor      | ≥ 55 fps over a 10 s window in-stream       | anything that stalls the frame clock         |
-| dropped frames | rAF gaps > 25 ms total < 5% of 60 Hz budget | jank bursts a mean fps number would average out |
+| Bar            | Threshold                                                | Catches                                      |
+|----------------|----------------------------------------------------------|----------------------------------------------|
+| virtualization | mounted `.row-wrap` nodes < 200 at 30k rows              | dropping virtualisation (full-list render)   |
+| fps floor      | refresh-aware (issue #29): see below                      | anything that stalls the frame clock         |
+| dropped frames | rAF gaps > 1.5 × local frame period, < 5% of local budget | jank bursts a mean fps number would average out |
+
+**Refresh-aware floor (issue #29).** rAF follows the display refresh rate, so a single absolute threshold is meaningless on anything but 60 Hz. The spec measures refresh before the load sample (median rAF gap over ~30 quiet frames on the same rAF clock as the fps sample — right by construction wherever the spec runs, no CDP emulation needed) and applies **both** bars:
+
+- **Absolute** `fps ≥ 55` — only binds when `refreshRate ≥ 60` (catches catastrophic regressions on a 60 Hz+ display without weakening the relative bar on sub-60 Hz hardware).
+- **Relative** `fps ≥ 0.9 × refreshRate` — keeps the spec meaningful on sub-60 Hz (a 30 Hz display cannot hit 55; the relative floor says "≥ 27") and on >60 Hz displays (a 165 Hz display coasting at 60 fps is a real regression the old absolute bar silently passed).
+
+The drop gap and drop budget are scaled to the local frame period (e.g. 16.7 ms / 6.1 ms on 60 / 165 Hz), so the dropped-frame ceiling tracks whatever display the spec ran on. Streaming load can only lengthen rAF gaps, so the median under load still upper-bounds the frame period — the derived floor errs lenient, never strict.
+
+The verdict line (`[60fps] N fps over T s (refresh=R Hz, floor=F), D dropped frames (X% of budget), M mounted rows`) prints on every run, pass or fail, so the threshold that fired is in the CI log.
 
 fps is measured as `requestAnimationFrame` callbacks per second inside the
 page — the compositor's own frame clock, so React render cost, layout and
 paint are all inside the measurement. The run always writes a Chrome trace
 to `app/e2e/.output/60fps.trace.json` (load in Perfetto or the DevTools
 Performance tab) so a regression has a profile to diff, not just a number.
-The verdict line (`[60fps] N fps, D dropped, M mounted rows`) prints on
-every run, pass or fail.
 
 Background-throttling Chromium switches
 (`--disable-background-timer-throttling` etc., see
@@ -108,6 +115,7 @@ Verified regression sensitivity: replacing `getVirtualItems()` with a
 render-every-row map fails the run loudly (the seed phase itself times out
 under the O(rows) render, before the fps bar is even reached).
 
-Baseline on the dev box below: ~164 fps (165 Hz display — rAF follows the
-refresh rate, hence a floor well under the healthy value), 0 dropped
-frames, 50 mounted rows, whole spec ~24 s.
+Baseline on the dev box below: ~164 fps against a measured 165 Hz refresh
+(floor 148.5 from the relative bar), 0 dropped frames, 50 mounted rows,
+whole spec ~24 s. Under issue #29's bars the same run is now held to 90% of
+its own refresh rather than a 55 bar it could never meaningfully fail.
