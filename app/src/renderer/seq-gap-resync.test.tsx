@@ -75,13 +75,16 @@ describe('<ResyncBanner>', () => {
 
     act(() => deliver(batch(1)));
     expect(screen.queryByRole('status')).toBeNull();
-    expect(send).not.toHaveBeenCalled();
+    // Provider mounts kick off the initial history page (§7.1) — only
+    // get_state must wait for an explicit resync.
+    const getStateCalls = () =>
+      send.mock.calls.filter(([arg]) => (arg as { type?: string }).type === 'get_state');
+    expect(getStateCalls()).toHaveLength(0);
 
     act(() => deliver(batch(5)));
     expect(screen.getByRole('status').textContent).toBe(
       'stream gap detected, re-reading state',
     );
-    expect(send).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith({ type: 'get_state' });
+    expect(getStateCalls()).toHaveLength(1);
   });
 });

@@ -22,6 +22,7 @@ import {
   Coalescer,
   TranscriptModel,
   decodeEventValue,
+  historyRows,
   type ChatMessage,
 } from '../main/omp-rpc';
 // Value imports below are cycle-safe: those modules import only *types* from
@@ -74,7 +75,28 @@ const INITIAL: StreamState = {
 export interface TranscriptStoreState extends StreamState {
   readonly messages: readonly ChatMessage[];
   readonly streaming: boolean;
+  readonly history: HistoryPaging;
 }
+
+/**
+ * History-paging phases (spec §7). `initial` shows the skeleton row;
+ * `idle`+`hasMore` shows the "Load earlier messages…" pill; `busy` replaces
+ * the pill with the quiet lock message and retries on the next terminal
+ * `agent_end` / `auto_compaction_end`.
+ */
+export type HistoryPaging =
+  | { phase: 'initial' }
+  | { phase: 'idle'; hasMore: boolean }
+  | { phase: 'loading'; hasMore: boolean }
+  | { phase: 'busy'; hasMore: boolean };
+
+/** A slow `get_messages_page` can't be cancelled (RPC gap #5) — time the
+ * initial request out locally so replay/dev sessions without a live server
+ * drop the skeleton row. */
+const INITIAL_PAGE_TIMEOUT_MS = 10_000;
+
+/** Page size for `get_messages_page` — the server max (spec §7.1). */
+const PAGE_LIMIT = 256;
 
 /** Single source of truth for the renderer. Subscribes to bridge batches,
  * feeds them through the coalescer into the model, and flushes pending
@@ -97,12 +119,27 @@ export class TranscriptStore {
   readonly model = new TranscriptModel();
   private readonly coalescer = new Coalescer();
   private rafHandle: number | null = null;
+
+  // --- history paging (spec §7) ---
+  private history: HistoryPaging = { phase: 'initial' };
+  /** Opaque server cursor for the next-older page; null = no more pages. */
+  private nextCursor: string | null = null;
+  /** Correlation id of the in-flight page request; responses are matched on
+   * id, never on order (docs/rpc-events.md §0). */
+  private pageId: string | null = null;
+  private pageCounter = 0;
+  /** Set when a `session_busy` page failed; the next terminal `agent_end` /
+   * `auto_compaction_end` re-issues it (spec §7.1 step 5). */
+  private retryOnIdle = false;
+  private initialTimeout: ReturnType<typeof setTimeout> | null = null;
+
   /** Cached snapshot — `useSyncExternalStore` requires referential stability
    * between notifications, and rebuilding per read would loop React. */
   private snapshot: TranscriptStoreState = {
     ...INITIAL,
     messages: [],
     streaming: false,
+    history: { phase: 'initial' },
   };
 
   getState = (): TranscriptStoreState => this.snapshot;
@@ -114,8 +151,92 @@ export class TranscriptStore {
       // settled row objects are stable, only the streaming tail mutates.
       messages: [...this.model.messages],
       streaming: this.model.streaming,
+      history: this.history,
     };
     for (const l of this.listeners) l();
+  }
+
+  /** Issue the no-cursor initial page (spec §7.1 steps 1–3). Skeleton shows
+   * until the response lands or the local timeout gives up (replay/dev
+   * sessions have no server to answer). */
+  startHistory(): void {
+    if (this.history.phase !== 'initial' || this.pageId !== null) return;
+    this.requestPage(null);
+    this.initialTimeout = setTimeout(() => {
+      this.initialTimeout = null;
+      if (this.history.phase !== 'initial') return;
+      this.pageId = null;
+      this.history = { phase: 'idle', hasMore: false };
+      this.notify();
+    }, INITIAL_PAGE_TIMEOUT_MS);
+  }
+
+  /** Page in the next-older 256 messages. Called from the scroll listener
+   * (within 200 px of the top) and the "Load earlier" pill. */
+  loadEarlier(): void {
+    if (this.history.phase !== 'idle' || !this.history.hasMore) return;
+    if (this.nextCursor === null) return;
+    this.history = { phase: 'loading', hasMore: true };
+    this.requestPage(this.nextCursor);
+    this.notify();
+  }
+
+  private requestPage(cursor: string | null): void {
+    this.pageId = `history:${++this.pageCounter}`;
+    this.send?.({
+      id: this.pageId,
+      type: 'get_messages_page',
+      ...(cursor !== null ? { cursor } : {}),
+      limit: PAGE_LIMIT,
+    });
+  }
+
+  /** Response frame for the in-flight page request. */
+  private onPageResponse(resp: {
+    id?: string;
+    success: boolean;
+    data?: unknown;
+    code?: string;
+  }): void {
+    if (resp.id !== this.pageId) return; // stale or foreign response
+    this.pageId = null;
+    if (this.initialTimeout !== null) {
+      clearTimeout(this.initialTimeout);
+      this.initialTimeout = null;
+    }
+    if (resp.success) {
+      const data = resp.data as { messages?: unknown; nextCursor?: unknown } | undefined;
+      this.model.mergeHistory(historyRows(data?.messages, `p${this.pageCounter}`));
+      this.nextCursor = typeof data?.nextCursor === 'string' ? data.nextCursor : null;
+      // Only the absence of nextCursor means done — never a short page
+      // (docs/rpc-events.md §5.2).
+      this.history = { phase: 'idle', hasMore: this.nextCursor !== null };
+    } else if (resp.code === 'session_busy') {
+      // Retry after the turn/compaction ends (spec §7.1 step 5).
+      this.retryOnIdle = true;
+      this.history = { phase: 'busy', hasMore: true };
+    } else {
+      // stale_cursor (or anything unexpected): discard and restart from no
+      // cursor (spec §7.1 step 6). The prepend dedupe by id makes the
+      // re-fetched overlap harmless.
+      this.nextCursor = null;
+      if (resp.code === 'stale_cursor') {
+        this.history = { phase: 'loading', hasMore: true };
+        this.requestPage(null);
+      } else {
+        this.history = { phase: 'idle', hasMore: false };
+      }
+    }
+    this.notify();
+  }
+
+  /** A `session_busy` retry fires once the session goes quiet. */
+  private onSessionIdle(): void {
+    if (!this.retryOnIdle) return;
+    this.retryOnIdle = false;
+    const cursor = this.nextCursor;
+    this.history = { phase: 'loading', hasMore: true };
+    this.requestPage(cursor);
   }
 
   apply = (batch: unknown): void => {
@@ -129,11 +250,30 @@ export class TranscriptStore {
       gapDetected,
     };
     for (const frame of b.frames) {
+      if (frame.kind === 'response') {
+        const resp = frame.payload as { id?: string; success?: boolean } | null;
+        if (resp && typeof resp.success === 'boolean') {
+          this.onPageResponse(resp as Parameters<typeof this.onPageResponse>[0]);
+        }
+        continue;
+      }
       const event = decodeEventValue(frame.payload);
       for (const e of this.coalescer.feed(event)) this.model.apply(e);
       if (this.frameListeners.size > 0) {
         for (const l of this.frameListeners) l(frame);
       }
+      if (
+        (event.event === 'agent_end' && event.isTerminal) ||
+        frame.kind === 'auto_compaction_end'
+      ) {
+        this.onSessionIdle();
+      }
+    }
+    // First live frames while still 'initial': the session is producing a
+    // stream, so the skeleton must yield to the real rows (spec §7.3 —
+    // streaming is independent of paging).
+    if (this.history.phase === 'initial' && this.model.messages.length > 0) {
+      this.history = { phase: 'idle', hasMore: false };
     }
     if (this.coalescer.hasPending()) this.scheduleFlush();
     this.notify();
@@ -178,6 +318,8 @@ export class TranscriptStore {
   dispose(): void {
     if (this.rafHandle !== null) cancelAnimationFrame(this.rafHandle);
     this.rafHandle = null;
+    if (this.initialTimeout !== null) clearTimeout(this.initialTimeout);
+    this.initialTimeout = null;
     this.coalescer.reset();
   }
 }
@@ -225,6 +367,8 @@ export function OmpProvider({
     if (!bridge) return;
     store.send = bridge.send.bind(bridge);
     const unsubscribe = bridge.subscribe(store.apply);
+    // Session open: kick off the no-cursor initial history page (spec §7.1).
+    store.startHistory();
     return () => {
       store.send = null;
       unsubscribe();

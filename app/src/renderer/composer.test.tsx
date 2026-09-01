@@ -81,7 +81,12 @@ describe('composer', () => {
     submitForm(input);
     fireEvent.change(input, { target: { value: '   ' } });
     submitForm(input);
-    expect(send).not.toHaveBeenCalled();
+    // Provider mounts kick off the initial history page (§7.1) — only
+    // composer submits should be absent.
+    const composerCalls = send.mock.calls.filter(
+      ([arg]) => (arg as { type?: string }).type === 'steer' || (arg as { type?: string }).type === 'follow_up',
+    );
+    expect(composerCalls).toHaveLength(0);
   });
 });
 
